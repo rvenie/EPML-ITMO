@@ -1,0 +1,57 @@
+[project]
+name = "research-agents-hub"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Your Name",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas (>=2.3.3,<3.0.0)",
+    "numpy (>=2.3.5,<3.0.0)",
+    "scikit-learn (>=1.7.2,<2.0.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.4.4"
+mypy = "^1.10.0"
+bandit = "^1.7.8"
+pre-commit = "^3.7.1"
+
+
+# Ruff
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["researchhub"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort (сортировка импортов)
+    "B",  # flake8-bugbear (поиск багов)
+]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["researchhub"] # Чтобы твои модули отделялись от внешних библиотек
+
+# MyPy
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+strict = false
+
+# Bandit
+[tool.bandit]
+exclude_dirs = ["tests", "notebooks"]
