@@ -70,7 +70,7 @@ poetry run pre-commit install
 poetry run pre-commit run --all-files
 ```
 Результат (все проверки прошли):
-![проверки при коммите](check_screenshot.png)
+![проверки при коммите](pics/check_screenshot.png)
 
 ## Git workflow (ветвление)
 - **main** — стабильная версия проекта.

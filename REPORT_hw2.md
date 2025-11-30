@@ -97,12 +97,13 @@ mlflow:
 ### Запуск MLflow сервера
 ```bash
 # Запуск tracking server
-nohup mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri file:./mlruns > mlflow.log 2>&1 &
+nohup mlflow server --host 127.0.0.1 --port 3000 --backend-store-uri file:./mlruns > mlflow.log 2>&1 &
 
 # Проверка доступности
-curl http://127.0.0.1:5000/
+curl http://127.0.0.1:3000/
 # <!doctype html><html lang="en"><head><meta charset="utf-8"/>...
 ```
+
 
 ### Обучение модели с MLflow логированием
 Создан скрипт `scripts/train_model.py` с полной интеграцией MLflow:
@@ -173,6 +174,9 @@ mlruns/                               # MLflow tracking данные
 └── models/                          # Model Registry
     └── research_publications_classification_model/
 ```
+![MLflow](pics/mlflow1.png)
+![MLflow](pics/mlflow2.png)
+![MLflow](pics/mlflow3.png)
 
 ## Контейнеризация для воспроизводимости
 
@@ -189,7 +193,7 @@ RUN pip install dvc[s3]==3.64.0 mlflow==2.22.2
 ```yaml
 services:
   mlflow-server:
-    ports: ["5000:5000"]
+    ports: ["3000:3000"]
     command: ["mlflow-server"]
     
   ml-app:
@@ -224,16 +228,8 @@ docker-compose run --rm ml-app train
 dvc status
 # Data and pipelines are up to date.
 
-# Проверка MLflow
-python -c "
-import mlflow
-mlflow.set_tracking_uri('file:./mlruns')
-client = mlflow.tracking.MlflowClient()
-experiments = client.search_experiments()
-print(f'Experiments: {len(experiments)}')
-"
-# Experiments: 1
 ```
+![DVC](pics/dvc.png)
 
 ## Git workflow для версионирования
 
@@ -245,27 +241,5 @@ print(f'Experiments: {len(experiments)}')
 ### Коммиты версионирования
 ```bash
 git add .dvc/config data/raw/*.dvc data/processed/*.dvc models/*.dvc
-git commit -m "feat: Настройка DVC и MLflow для версионирования
-
-- Инициализирован DVC с локальным remote storage
-- Добавлено версионирование данных (raw и processed)
-- Настроен MLflow tracking server с Model Registry  
-- Обучена модель RandomForest с 90.9% точностью
-- Создана полная воспроизводимость через Docker"
+git commit -m "feat: ..."
 ```
-
-## Итоговые результаты
-
-### Выполненные требования:
-- ✅ **DVC для данных:** Настроен remote storage, версионирование данных
-- ✅ **MLflow для моделей:** Model Registry, отслеживание экспериментов  
-- ✅ **Воспроизводимость:** Docker контейнеры, фиксированные зависимости
-- ✅ **Документация:** Подробные инструкции по воспроизведению
-
-### Ключевые достижения:
-- **Точность модели:** 90.91% на тестовой выборке
-- **Время обучения:** ~15 секунд
-- **Версионирование:** Полное отслеживание данных и моделей
-- **Автоматизация:** Скрипты для полного воспроизведения результатов
-
-Система готова к производственному использованию и позволяет отслеживать все изменения в данных и моделях с возможностью быстрого воспроизведения любой версии.
