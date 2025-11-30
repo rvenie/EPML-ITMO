@@ -1,29 +1,29 @@
-# Parameters for ML Pipeline
-# This file contains all configurable parameters for the research publications ML pipeline
+# Параметры для ML пайплайна
+# Этот файл содержит все настраиваемые параметры для ML пайплайна анализа научных публикаций
 
-# Feature Engineering Parameters
+# Параметры инженерии признаков
 feature_engineering:
   tfidf_max_features: 5000
-  ngram_range: [1, 2] # Use unigrams and bigrams
-  min_df: 2 # Minimum document frequency
-  max_df: 0.95 # Maximum document frequency
+  ngram_range: [1, 2] # Используем униграммы и биграммы
+  min_df: 2 # Минимальная частота документа
+  max_df: 0.95 # Максимальная частота документа
   use_tfidf: true
   lowercase: true
   stop_words: "english"
 
-  # Text processing
+  # Обработка текста
   text_columns:
     - "title_cleaned"
     - "abstract_cleaned"
     - "keywords"
 
-  # Categorical encoding
+  # Кодирование категориальных признаков
   categorical_columns:
     - "journal_category"
     - "abstract_category"
     - "citation_category"
 
-  # Numerical features
+  # Числовые признаки
   numerical_columns:
     - "impact_score"
     - "cited_by"
@@ -33,18 +33,18 @@ feature_engineering:
     - "author_count"
     - "num_keywords"
 
-# Model Training Parameters
+# Параметры обучения модели
 train:
-  algorithm: "RandomForestClassifier" # Options: RandomForestClassifier, SVM, LogisticRegression
+  algorithm: "RandomForestClassifier" # Варианты: RandomForestClassifier, SVM, LogisticRegression
   test_size: 0.2
   random_state: 42
 
-  # Cross validation
+  # Кросс-валидация
   cross_validation:
     folds: 3
     scoring: "accuracy"
 
-  # Model-specific parameters
+  # Специфичные параметры модели
   random_forest:
     n_estimators: 100
     max_depth: 10
@@ -66,7 +66,7 @@ train:
     max_iter: 1000
     solver: "liblinear"
 
-# Model Evaluation Parameters
+# Параметры оценки модели
 evaluate:
   metrics:
     - "accuracy"
@@ -75,62 +75,62 @@ evaluate:
     - "f1_score"
     - "roc_auc"
 
-  # Classification target
+  # Цель классификации
   target_column: "journal_category"
 
-  # Visualization settings
+  # Настройки визуализации
   plot_style: "seaborn"
   figure_size: [10, 8]
   dpi: 300
 
-  # Report settings
+  # Настройки отчета
   include_classification_report: true
   include_confusion_matrix: true
   include_feature_importance: true
   top_features_to_show: 20
 
-# Data Validation Parameters
+# Параметры валидации данных
 data_validation:
-  # Expected data quality thresholds
+  # Ожидаемые пороги качества данных
   min_completeness: 0.95
   max_missing_ratio: 0.05
 
-  # Expected data ranges
+  # Ожидаемые диапазоны данных
   year_range: [2020, 2024]
   min_citations: 0
   max_citations: 1000
 
-  # Text field validation
+  # Валидация текстовых полей
   min_title_length: 10
   max_title_length: 500
   min_abstract_length: 50
   max_abstract_length: 2000
 
-# MLflow Tracking Parameters
+# Параметры отслеживания MLflow
 mlflow:
   experiment_name: "research_publications_classification"
   run_name: "baseline_model"
   tracking_uri: "file:./mlruns"
 
-  # Tags
+  # Теги
   tags:
     project: "research_agents_hub"
     domain: "digital_pathology"
     model_type: "classification"
     data_version: "v1.0"
 
-  # Artifacts to log
+  # Артефакты для логирования
   log_artifacts:
     - "models/"
     - "reports/"
     - "data/processed/processing_metadata.yaml"
 
-# Reproducibility Settings
+# Настройки воспроизводимости
 reproducibility:
   seed: 42
   deterministic: true
 
-# Resource Settings
+# Настройки ресурсов
 resources:
-  n_jobs: -1 # Use all available cores
+  n_jobs: -1 # Использовать все доступные ядра
   memory_limit: "4G"

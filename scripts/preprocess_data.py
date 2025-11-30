@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Data Preprocessing Script for Research Publications Dataset
-This script processes raw publication data and prepares it for ML model training.
+Скрипт предобработки данных для датасета научных публикаций
+Данный скрипт обрабатывает сырые данные публикаций и подготавливает их
+для обучения ML модели.
 """
 
 import argparse
@@ -15,7 +16,7 @@ import numpy as np
 import pandas as pd
 import yaml  # type: ignore
 
-# Configure logging
+# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -27,25 +28,25 @@ logger = logging.getLogger(__name__)
 
 def clean_text(text: str) -> str:
     """
-    Clean and normalize text data.
+    Очищает и нормализует текстовые данные.
 
     Args:
-        text: Raw text string
+        text: Исходная текстовая строка
 
     Returns:
-        Cleaned text string
+        Очищенная текстовая строка
     """
     if not isinstance(text, str):
         return ""
 
-    # Convert to lowercase
+    # Приводим к нижнему регистру
     text = text.lower()
 
-    # Remove special characters and extra whitespace
+    # Удаляем специальные символы и лишние пробелы
     text = re.sub(r"[^\w\s]", " ", text)
     text = re.sub(r"\s+", " ", text)
 
-    # Strip leading/trailing whitespace
+    # Убираем пробелы в начале и конце
     text = text.strip()
 
     return text
@@ -53,31 +54,31 @@ def clean_text(text: str) -> str:
 
 def extract_keywords_list(keywords: str) -> list:
     """
-    Extract keywords from comma-separated string.
+    Извлекает ключевые слова из строки, разделенной запятыми.
 
     Args:
-        keywords: Comma-separated keywords string
+        keywords: Строка ключевых слов, разделенных запятыми
 
     Returns:
-        List of cleaned keywords
+        Список очищенных ключевых слов
     """
     if not isinstance(keywords, str):
         return []
 
-    # Split by comma and clean each keyword
+    # Разделяем по запятой и очищаем каждое ключевое слово
     keyword_list = [kw.strip() for kw in keywords.split(",")]
-    return [kw for kw in keyword_list if kw]  # Remove empty keywords
+    return [kw for kw in keyword_list if kw]  # Удаляем пустые ключевые слова
 
 
 def categorize_journal(journal: str) -> str:
     """
-    Categorize journal by type based on name.
+    Категоризирует журнал по типу на основе названия.
 
     Args:
-        journal: Journal name
+        journal: Название журнала
 
     Returns:
-        Journal category
+        Категория журнала
     """
     journal_lower = journal.lower()
 
@@ -93,22 +94,22 @@ def categorize_journal(journal: str) -> str:
 
 def calculate_impact_score(cited_by: int, year: int) -> float:
     """
-    Calculate a simple impact score based on citations and recency.
+    Вычисляет простой индекс влияния на основе цитирований и года публикации.
 
     Args:
-        cited_by: Number of citations
-        year: Publication year
+        cited_by: Количество цитирований
+        year: Год публикации
 
     Returns:
-        Impact score
+        Индекс влияния
     """
     current_year = datetime.now().year
     years_since_publication = max(1, current_year - year)
 
-    # Normalize citations by years since publication
+    # Нормализуем цитирования по годам с момента публикации
     citations_per_year = cited_by / years_since_publication
 
-    # Simple impact score (can be enhanced with more sophisticated metrics)
+    # Простой индекс влияния (может быть улучшен более сложными метриками)
     impact_score = np.log1p(citations_per_year) * (1 / np.sqrt(years_since_publication))
 
     return round(impact_score, 3)
@@ -118,16 +119,16 @@ def preprocess_data(
     input_file: str, output_file: str, metadata_file: Optional[str] = None
 ) -> None:
     """
-    Main preprocessing function.
+    Основная функция предобработки.
 
     Args:
-        input_file: Path to input CSV file
-        output_file: Path to output processed CSV file
-        metadata_file: Optional path to save processing metadata
+        input_file: Путь к входному CSV файлу
+        output_file: Путь к выходному обработанному CSV файлу
+        metadata_file: Опциональный путь для сохранения метаданных обработки
     """
     logger.info(f"Starting data preprocessing: {input_file} -> {output_file}")
 
-    # Load data
+    # Загружаем данные
     try:
         df = pd.read_csv(input_file)
         logger.info(f"Loaded {len(df)} records from {input_file}")
@@ -135,10 +136,10 @@ def preprocess_data(
         logger.error(f"Error loading data: {e}")
         return
 
-    # Store original shape for metadata
+    # Сохраняем исходную форму для метаданных
     original_shape = df.shape
 
-    # Preprocessing steps
+    # Шаги предобработки
     logger.info("Cleaning text columns...")
     df["title_cleaned"] = df["title"].apply(clean_text)
     df["abstract_cleaned"] = df["abstract"].apply(clean_text)
@@ -245,7 +246,7 @@ def preprocess_data(
 
 
 def main():
-    """Main function with command line argument parsing."""
+    """Главная функция с парсингом аргументов командной строки."""
     parser = argparse.ArgumentParser(
         description="Preprocess research publications data"
     )
@@ -270,7 +271,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Create output directory if it doesn't exist
+    # Создаем выходную директорию если она не существует
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -278,7 +279,7 @@ def main():
         metadata_path = Path(args.metadata)
         metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Run preprocessing
+    # Запускаем предобработку
     preprocess_data(args.input, args.output, args.metadata)
 
 

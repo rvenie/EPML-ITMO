@@ -1,48 +1,48 @@
-# Multi-stage Dockerfile for ML project with DVC and MLflow support
+# Многоэтапный Dockerfile для ML проекта с поддержкой DVC и MLflow
 FROM python:3.11-slim as base
 
-# Set environment variables
+# Установка переменных окружения
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies
+# Установка системных зависимостей
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Установка рабочей директории
 WORKDIR /app
 
-# Copy requirements first for better caching
+# Сначала копируем requirements для лучшего кеширования
 COPY requirements.txt .
 COPY pyproject.toml .
 
-# Install Python dependencies
+# Установка зависимостей Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install additional ML/DVC/MLflow dependencies if not in requirements
+# Установка дополнительных ML/DVC/MLflow зависимостей если их нет в requirements
 RUN pip install --no-cache-dir \
     dvc[s3]==3.64.0 \
     mlflow==2.22.2 \
     boto3==1.41.5
 
-# Copy project files
+# Копирование файлов проекта
 COPY . .
 
-# Create necessary directories
+# Создание необходимых директорий
 RUN mkdir -p data/raw data/processed models reports mlruns
 
-# Set up DVC (initialize if .dvc doesn't exist)
+# Настройка DVC (инициализация если .dvc не существует)
 RUN if [ ! -d ".dvc" ]; then dvc init --no-scm; fi
 
-# Expose MLflow port
+# Открытие порта MLflow
 EXPOSE 5000
 
-# Create entrypoint script
+# Создание скрипта entrypoint
 RUN echo '#!/bin/bash\n\
     set -e\n\
     \n\
@@ -79,21 +79,21 @@ RUN echo '#!/bin/bash\n\
     exec "$@"\n\
     fi' > /app/entrypoint.sh
 
-# Make entrypoint executable
+# Делаем entrypoint исполняемым
 RUN chmod +x /app/entrypoint.sh
 
-# Set up health check for MLflow server
+# Настройка проверки здоровья для MLflow сервера
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
-# Default command
+# Команда по умолчанию
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["python", "researchhub/main.py"]
 
-# Multi-stage for development
+# Многоэтапная сборка для разработки
 FROM base as development
 
-# Install development dependencies
+# Установка зависимостей для разработки
 RUN pip install --no-cache-dir \
     jupyter \
     notebook \
@@ -102,26 +102,26 @@ RUN pip install --no-cache-dir \
     black \
     flake8
 
-# Expose Jupyter port
+# Открытие порта Jupyter
 EXPOSE 8888
 
-# Override entrypoint for development
+# Переопределение entrypoint для разработки
 CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''"]
 
-# Production stage
+# Продакшен стадия
 FROM base as production
 
-# Remove unnecessary files
+# Удаление ненужных файлов
 RUN find . -type f -name "*.pyc" -delete && \
     find . -type d -name "__pycache__" -delete && \
     rm -rf .git .pytest_cache .mypy_cache
 
-# Run as non-root user for security
+# Запуск от имени не-root пользователя для безопасности
 RUN useradd --create-home --shell /bin/bash mluser && \
     chown -R mluser:mluser /app
 
 USER mluser
 
-# Health check for production
+# Проверка здоровья для продакшена
 HEALTHCHECK --interval=60s --timeout=30s --start-period=60s --retries=3 \
     CMD python -c "import sys; sys.exit(0)" || exit 1

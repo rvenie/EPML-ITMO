@@ -1,8 +1,8 @@
-# Docker Compose configuration for ML project with DVC and MLflow
-version: '3.8'
+# Конфигурация Docker Compose для ML проекта с DVC и MLflow
+version: "3.8"
 
 services:
-  # MLflow Tracking Server
+  # MLflow сервер отслеживания
   mlflow-server:
     build:
       context: .
@@ -29,7 +29,7 @@ services:
       retries: 3
       start_period: 30s
 
-  # ML Application Service
+  # Сервис ML приложения
   ml-app:
     build:
       context: .
@@ -57,7 +57,7 @@ services:
     profiles:
       - training
 
-  # Development Environment with Jupyter
+  # Среда разработки с Jupyter
   jupyter-dev:
     build:
       context: .
@@ -83,7 +83,7 @@ services:
     profiles:
       - development
 
-  # Data Preprocessing Service
+  # Сервис предобработки данных
   data-preprocessing:
     build:
       context: .
@@ -101,7 +101,7 @@ services:
     profiles:
       - preprocessing
 
-  # Model Training Service
+  # Сервис обучения модели
   model-training:
     build:
       context: .
@@ -135,7 +135,7 @@ volumes:
   models-data:
   data-storage:
 
-# Override configurations for different environments
+# Переопределение конфигураций для разных сред
 x-common-environment: &common-env
   PYTHONPATH: /app
   MLFLOW_TRACKING_URI: http://mlflow-server:5000
@@ -147,27 +147,27 @@ x-common-volumes: &common-volumes
   - ./mlruns:/app/mlruns
   - ./scripts:/app/scripts
 
-# Usage examples in comments:
+# Примеры использования в комментариях:
 #
-# Development mode with Jupyter:
+# Режим разработки с Jupyter:
 # docker-compose --profile development up
 #
-# Start only MLflow server:
+# Запуск только MLflow сервера:
 # docker-compose up mlflow-server
 #
-# Run full training pipeline:
+# Запуск полного пайплайна обучения:
 # docker-compose --profile preprocessing up data-preprocessing
 # docker-compose --profile training up model-training
 #
-# Run everything for development:
+# Запуск всего для разработки:
 # docker-compose --profile development --profile training up
 #
-# Production deployment:
+# Развертывание в продакшене:
 # docker-compose up mlflow-server
 # docker-compose run --rm ml-app python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/classifier.pkl --metrics metrics.json
 #
-# Scale MLflow for high availability:
+# Масштабирование MLflow для высокой доступности:
 # docker-compose up --scale mlflow-server=2
 #
-# Check DVC status:
+# Проверка статуса DVC:
 # docker-compose run --rm ml-app dvc-status

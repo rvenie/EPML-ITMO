@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Model Training Script with MLflow Integration
-This script trains ML models for research publication classification and logs
-everything to MLflow.
+Скрипт обучения модели с интеграцией MLflow
+Данный скрипт обучает ML модели для классификации научных публикаций и логирует
+все данные в MLflow.
 """
 
 import argparse
@@ -31,11 +31,11 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-# ML libraries
+# ML библиотеки
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.svm import SVC
 
-# Configure logging
+# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_params(params_file: str) -> Dict[str, Any]:
-    """Load parameters from YAML file."""
+    """Загружает параметры из YAML файла."""
     try:
         with open(params_file, "r") as f:
             params = yaml.safe_load(f)
@@ -58,7 +58,7 @@ def load_params(params_file: str) -> Dict[str, Any]:
 
 
 def load_data(data_file: str) -> pd.DataFrame:
-    """Load processed data."""
+    """Загружает обработанные данные."""
     try:
         df = pd.read_csv(data_file)
         logger.info(f"Loaded {len(df)} records from {data_file}")
@@ -71,14 +71,14 @@ def load_data(data_file: str) -> pd.DataFrame:
 def create_features(
     df: pd.DataFrame, params: Dict[str, Any]
 ) -> Tuple[np.ndarray, np.ndarray, TfidfVectorizer]:
-    """Create feature matrix and target vector."""
+    """Создает матрицу признаков и целевой вектор."""
     feature_params = params["feature_engineering"]
 
-    # Text features
+    # Текстовые признаки
     text_columns = feature_params["text_columns"]
     text_data = df[text_columns].fillna("").apply(lambda x: " ".join(x), axis=1)
 
-    # TF-IDF Vectorization
+    # TF-IDF векторизация
     tfidf = TfidfVectorizer(
         max_features=feature_params["tfidf_max_features"],
         ngram_range=tuple(feature_params["ngram_range"]),
@@ -91,18 +91,18 @@ def create_features(
     text_features = tfidf.fit_transform(text_data).toarray()
     logger.info(f"Created {text_features.shape[1]} text features")
 
-    # Numerical features
+    # Числовые признаки
     numerical_cols = feature_params["numerical_columns"]
     numerical_features = df[numerical_cols].fillna(0).values
 
-    # Categorical features (one-hot encoding)
+    # Категориальные признаки (one-hot кодирование)
     categorical_cols = feature_params["categorical_columns"]
     categorical_features = pd.get_dummies(df[categorical_cols]).values
 
-    # Combine all features
+    # Объединяем все признаки
     X = np.hstack([text_features, numerical_features, categorical_features])
 
-    # Target variable
+    # Целевая переменная
     target_col = params["evaluate"]["target_column"]
     y = df[target_col].values
 
@@ -113,7 +113,7 @@ def create_features(
 
 
 def get_model(algorithm: str, params: Dict[str, Any]):
-    """Get model instance based on algorithm and parameters."""
+    """Возвращает экземпляр модели на основе алгоритма и параметров."""
     if algorithm == "RandomForestClassifier":
         rf_params = params["train"]["random_forest"]
         return RandomForestClassifier(
@@ -151,7 +151,7 @@ def get_model(algorithm: str, params: Dict[str, Any]):
 
 
 def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
-    """Evaluate model and return metrics."""
+    """Оценивает модель и возвращает метрики."""
     y_pred = model.predict(X_test)
     y_pred_proba = (
         model.predict_proba(X_test) if hasattr(model, "predict_proba") else None
@@ -164,7 +164,7 @@ def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, f
         "f1_score": f1_score(y_test, y_pred, average="weighted"),
     }
 
-    # Add ROC AUC for multi-class if possible
+    # Добавляем ROC AUC для многоклассовой классификации если возможно
     if y_pred_proba is not None and len(np.unique(y_test)) > 2:
         try:
             metrics["roc_auc"] = roc_auc_score(
@@ -179,19 +179,19 @@ def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, f
 def train_model(
     data_file: str, params_file: str, model_output: str, metrics_output: str
 ):
-    """Main training function with MLflow logging."""
+    """Основная функция обучения с логированием в MLflow."""
 
-    # Load parameters and data
+    # Загружаем параметры и данные
     params = load_params(params_file)
     df = load_data(data_file)
 
-    # Setup MLflow
+    # Настройка MLflow
     mlflow_params = params["mlflow"]
     mlflow.set_tracking_uri(mlflow_params["tracking_uri"])
     mlflow.set_experiment(mlflow_params["experiment_name"])
 
     with mlflow.start_run(run_name=mlflow_params["run_name"]):
-        # Log parameters
+        # Логируем параметры
         train_params = params["train"]
         mlflow.log_params(
             {
@@ -202,7 +202,7 @@ def train_model(
             }
         )
 
-        # Log algorithm-specific parameters
+        # Логируем специфические параметры алгоритма
         if train_params["algorithm"] == "RandomForestClassifier":
             mlflow.log_params(params["train"]["random_forest"])
         elif train_params["algorithm"] == "SVM":
@@ -210,18 +210,18 @@ def train_model(
         elif train_params["algorithm"] == "LogisticRegression":
             mlflow.log_params(params["train"]["logistic_regression"])
 
-        # Log feature engineering parameters
+        # Логируем параметры предобработки признаков
         mlflow.log_params(params["feature_engineering"])
 
-        # Add tags
+        # Добавляем теги
         for key, value in mlflow_params["tags"].items():
             mlflow.set_tag(key, value)
 
-        # Create features
+        # Создаем признаки
         logger.info("Creating features...")
         X, y, tfidf = create_features(df, params)
 
-        # Split data
+        # Разделяем данные
         X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
@@ -232,12 +232,12 @@ def train_model(
         logger.info(f"Training set size: {X_train.shape}")
         logger.info(f"Test set size: {X_test.shape}")
 
-        # Initialize and train model
+        # Инициализируем и обучаем модель
         logger.info(f"Training {train_params['algorithm']} model...")
         model = get_model(train_params["algorithm"], params)
         model.fit(X_train, y_train)
 
-        # Cross-validation
+        # Кросс-валидация
         cv_scores = cross_val_score(
             model,
             X_train,
@@ -252,26 +252,26 @@ def train_model(
             f"Mean CV score: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})"
         )
 
-        # Evaluate on test set
+        # Оцениваем на тестовой выборке
         logger.info("Evaluating model on test set...")
         test_metrics = evaluate_model(model, X_test, y_test)
 
-        # Log metrics to MLflow
+        # Логируем метрики в MLflow
         mlflow.log_metric("cv_mean", cv_scores.mean())
         mlflow.log_metric("cv_std", cv_scores.std())
         for metric_name, metric_value in test_metrics.items():
             mlflow.log_metric(f"test_{metric_name}", metric_value)
 
-        # Log feature importance if available
+        # Логируем важность признаков если доступно
         if hasattr(model, "feature_importances_"):
             feature_importance = model.feature_importances_
             mlflow.log_metric("mean_feature_importance", feature_importance.mean())
             mlflow.log_metric("max_feature_importance", feature_importance.max())
 
-        # Create model signature for MLflow
+        # Создаем сигнатуру модели для MLflow
         signature = infer_signature(X_train, model.predict(X_train))
 
-        # Log model to MLflow
+        # Логируем модель в MLflow
         mlflow.sklearn.log_model(
             sk_model=model,
             artifact_path="model",
@@ -280,7 +280,7 @@ def train_model(
             registered_model_name=f"{mlflow_params['experiment_name']}_model",
         )
 
-        # Save model locally
+        # Сохраняем модель локально
         model_path = Path(model_output)
         model_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -304,7 +304,7 @@ def train_model(
 
         logger.info(f"Model saved to {model_output}")
 
-        # Save metrics
+        # Сохраняем метрики
         all_metrics = {
             "cross_validation": {
                 "mean_score": float(cv_scores.mean()),
@@ -327,7 +327,7 @@ def train_model(
 
         logger.info(f"Metrics saved to {metrics_output}")
 
-        # Create model metadata
+        # Создаем метаданные модели
         metadata_file = model_output.replace(".pkl", "_metadata.yaml")
         metadata = {
             "model_name": f"{mlflow_params['experiment_name']}_model",
@@ -356,7 +356,7 @@ def train_model(
 
         logger.info(f"Model metadata saved to {metadata_file}")
 
-        # Log artifacts to MLflow
+        # Логируем артефакты в MLflow
         mlflow.log_artifact(metrics_output, "metrics")
         mlflow.log_artifact(metadata_file, "metadata")
 
@@ -367,7 +367,7 @@ def train_model(
 
 
 def main():
-    """Main function with command line argument parsing."""
+    """Главная функция с парсингом аргументов командной строки."""
     parser = argparse.ArgumentParser(description="Train ML model with MLflow logging")
     parser.add_argument(
         "--input", type=str, required=True, help="Input processed data CSV file"
@@ -384,7 +384,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Train model
+    # Обучаем модель
     train_model(args.input, args.params, args.model_output, args.metrics)
 
 
