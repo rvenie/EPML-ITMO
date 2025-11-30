@@ -1,5 +1,8 @@
-# Data
-/data/
+# Data files but not DVC metadata
+/data/*
+!/data/.gitkeep
+!/data/*.dvc
+!/data/**/*.dvc
 
 # Mac OS-specific storage files
 .DS_Store

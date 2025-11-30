@@ -1,0 +1,392 @@
+#!/usr/bin/env python3
+"""
+Model Training Script with MLflow Integration
+This script trains ML models for research publication classification and logs
+everything to MLflow.
+"""
+
+import argparse
+import json
+import logging
+import pickle  # nosec
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Tuple
+
+# MLflow
+import mlflow
+import mlflow.sklearn
+import numpy as np
+import pandas as pd
+import yaml  # type: ignore
+from mlflow.models.signature import infer_signature
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
+
+# ML libraries
+from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.svm import SVC
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("training.log"), logging.StreamHandler()],
+)
+
+logger = logging.getLogger(__name__)
+
+
+def load_params(params_file: str) -> Dict[str, Any]:
+    """Load parameters from YAML file."""
+    try:
+        with open(params_file, "r") as f:
+            params = yaml.safe_load(f)
+        logger.info(f"Loaded parameters from {params_file}")
+        return params
+    except Exception as e:
+        logger.error(f"Error loading parameters: {e}")
+        raise
+
+
+def load_data(data_file: str) -> pd.DataFrame:
+    """Load processed data."""
+    try:
+        df = pd.read_csv(data_file)
+        logger.info(f"Loaded {len(df)} records from {data_file}")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading data: {e}")
+        raise
+
+
+def create_features(
+    df: pd.DataFrame, params: Dict[str, Any]
+) -> Tuple[np.ndarray, np.ndarray, TfidfVectorizer]:
+    """Create feature matrix and target vector."""
+    feature_params = params["feature_engineering"]
+
+    # Text features
+    text_columns = feature_params["text_columns"]
+    text_data = df[text_columns].fillna("").apply(lambda x: " ".join(x), axis=1)
+
+    # TF-IDF Vectorization
+    tfidf = TfidfVectorizer(
+        max_features=feature_params["tfidf_max_features"],
+        ngram_range=tuple(feature_params["ngram_range"]),
+        min_df=feature_params["min_df"],
+        max_df=feature_params["max_df"],
+        lowercase=feature_params["lowercase"],
+        stop_words=feature_params["stop_words"],
+    )
+
+    text_features = tfidf.fit_transform(text_data).toarray()
+    logger.info(f"Created {text_features.shape[1]} text features")
+
+    # Numerical features
+    numerical_cols = feature_params["numerical_columns"]
+    numerical_features = df[numerical_cols].fillna(0).values
+
+    # Categorical features (one-hot encoding)
+    categorical_cols = feature_params["categorical_columns"]
+    categorical_features = pd.get_dummies(df[categorical_cols]).values
+
+    # Combine all features
+    X = np.hstack([text_features, numerical_features, categorical_features])
+
+    # Target variable
+    target_col = params["evaluate"]["target_column"]
+    y = df[target_col].values
+
+    logger.info(f"Final feature matrix shape: {X.shape}")
+    logger.info(f"Target distribution: {np.unique(y, return_counts=True)}")
+
+    return X, y, tfidf
+
+
+def get_model(algorithm: str, params: Dict[str, Any]):
+    """Get model instance based on algorithm and parameters."""
+    if algorithm == "RandomForestClassifier":
+        rf_params = params["train"]["random_forest"]
+        return RandomForestClassifier(
+            n_estimators=rf_params["n_estimators"],
+            max_depth=rf_params["max_depth"],
+            min_samples_split=rf_params["min_samples_split"],
+            min_samples_leaf=rf_params["min_samples_leaf"],
+            max_features=rf_params["max_features"],
+            bootstrap=rf_params["bootstrap"],
+            oob_score=rf_params["oob_score"],
+            random_state=params["train"]["random_state"],
+            n_jobs=-1,
+        )
+    elif algorithm == "SVM":
+        svm_params = params["train"]["svm"]
+        return SVC(
+            kernel=svm_params["kernel"],
+            C=svm_params["C"],
+            gamma=svm_params["gamma"],
+            probability=svm_params["probability"],
+            random_state=params["train"]["random_state"],
+        )
+    elif algorithm == "LogisticRegression":
+        lr_params = params["train"]["logistic_regression"]
+        return LogisticRegression(
+            penalty=lr_params["penalty"],
+            C=lr_params["C"],
+            max_iter=lr_params["max_iter"],
+            solver=lr_params["solver"],
+            random_state=params["train"]["random_state"],
+            n_jobs=-1,
+        )
+    else:
+        raise ValueError(f"Unsupported algorithm: {algorithm}")
+
+
+def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
+    """Evaluate model and return metrics."""
+    y_pred = model.predict(X_test)
+    y_pred_proba = (
+        model.predict_proba(X_test) if hasattr(model, "predict_proba") else None
+    )
+
+    metrics = {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, average="weighted"),
+        "recall": recall_score(y_test, y_pred, average="weighted"),
+        "f1_score": f1_score(y_test, y_pred, average="weighted"),
+    }
+
+    # Add ROC AUC for multi-class if possible
+    if y_pred_proba is not None and len(np.unique(y_test)) > 2:
+        try:
+            metrics["roc_auc"] = roc_auc_score(
+                y_test, y_pred_proba, multi_class="ovr", average="weighted"
+            )
+        except ValueError:
+            logger.warning("Could not calculate ROC AUC score")
+
+    return metrics
+
+
+def train_model(
+    data_file: str, params_file: str, model_output: str, metrics_output: str
+):
+    """Main training function with MLflow logging."""
+
+    # Load parameters and data
+    params = load_params(params_file)
+    df = load_data(data_file)
+
+    # Setup MLflow
+    mlflow_params = params["mlflow"]
+    mlflow.set_tracking_uri(mlflow_params["tracking_uri"])
+    mlflow.set_experiment(mlflow_params["experiment_name"])
+
+    with mlflow.start_run(run_name=mlflow_params["run_name"]):
+        # Log parameters
+        train_params = params["train"]
+        mlflow.log_params(
+            {
+                "algorithm": train_params["algorithm"],
+                "test_size": train_params["test_size"],
+                "random_state": train_params["random_state"],
+                "cv_folds": train_params["cross_validation"]["folds"],
+            }
+        )
+
+        # Log algorithm-specific parameters
+        if train_params["algorithm"] == "RandomForestClassifier":
+            mlflow.log_params(params["train"]["random_forest"])
+        elif train_params["algorithm"] == "SVM":
+            mlflow.log_params(params["train"]["svm"])
+        elif train_params["algorithm"] == "LogisticRegression":
+            mlflow.log_params(params["train"]["logistic_regression"])
+
+        # Log feature engineering parameters
+        mlflow.log_params(params["feature_engineering"])
+
+        # Add tags
+        for key, value in mlflow_params["tags"].items():
+            mlflow.set_tag(key, value)
+
+        # Create features
+        logger.info("Creating features...")
+        X, y, tfidf = create_features(df, params)
+
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=train_params["test_size"],
+            random_state=train_params["random_state"],
+        )
+
+        logger.info(f"Training set size: {X_train.shape}")
+        logger.info(f"Test set size: {X_test.shape}")
+
+        # Initialize and train model
+        logger.info(f"Training {train_params['algorithm']} model...")
+        model = get_model(train_params["algorithm"], params)
+        model.fit(X_train, y_train)
+
+        # Cross-validation
+        cv_scores = cross_val_score(
+            model,
+            X_train,
+            y_train,
+            cv=train_params["cross_validation"]["folds"],
+            scoring=train_params["cross_validation"]["scoring"],
+            n_jobs=-1,
+        )
+
+        logger.info(f"Cross-validation scores: {cv_scores}")
+        logger.info(
+            f"Mean CV score: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})"
+        )
+
+        # Evaluate on test set
+        logger.info("Evaluating model on test set...")
+        test_metrics = evaluate_model(model, X_test, y_test)
+
+        # Log metrics to MLflow
+        mlflow.log_metric("cv_mean", cv_scores.mean())
+        mlflow.log_metric("cv_std", cv_scores.std())
+        for metric_name, metric_value in test_metrics.items():
+            mlflow.log_metric(f"test_{metric_name}", metric_value)
+
+        # Log feature importance if available
+        if hasattr(model, "feature_importances_"):
+            feature_importance = model.feature_importances_
+            mlflow.log_metric("mean_feature_importance", feature_importance.mean())
+            mlflow.log_metric("max_feature_importance", feature_importance.max())
+
+        # Create model signature for MLflow
+        signature = infer_signature(X_train, model.predict(X_train))
+
+        # Log model to MLflow
+        mlflow.sklearn.log_model(
+            sk_model=model,
+            artifact_path="model",
+            signature=signature,
+            input_example=X_train[:5],
+            registered_model_name=f"{mlflow_params['experiment_name']}_model",
+        )
+
+        # Save model locally
+        model_path = Path(model_output)
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+
+        model_data = {
+            "model": model,
+            "tfidf_vectorizer": tfidf,
+            "feature_columns": {
+                "text_columns": params["feature_engineering"]["text_columns"],
+                "numerical_columns": params["feature_engineering"]["numerical_columns"],
+                "categorical_columns": params["feature_engineering"][
+                    "categorical_columns"
+                ],
+            },
+            "target_column": params["evaluate"]["target_column"],
+            "training_date": datetime.now().isoformat(),
+            "model_version": "1.0.0",
+        }
+
+        with open(model_output, "wb") as f:
+            pickle.dump(model_data, f)
+
+        logger.info(f"Model saved to {model_output}")
+
+        # Save metrics
+        all_metrics = {
+            "cross_validation": {
+                "mean_score": float(cv_scores.mean()),
+                "std_score": float(cv_scores.std()),
+                "scores": cv_scores.tolist(),
+            },
+            "test_metrics": {k: float(v) for k, v in test_metrics.items()},
+            "model_info": {
+                "algorithm": train_params["algorithm"],
+                "training_samples": int(X_train.shape[0]),
+                "test_samples": int(X_test.shape[0]),
+                "features": int(X.shape[1]),
+                "classes": len(np.unique(y)),
+            },
+            "training_date": datetime.now().isoformat(),
+        }
+
+        with open(metrics_output, "w") as f:
+            json.dump(all_metrics, f, indent=2)
+
+        logger.info(f"Metrics saved to {metrics_output}")
+
+        # Create model metadata
+        metadata_file = model_output.replace(".pkl", "_metadata.yaml")
+        metadata = {
+            "model_name": f"{mlflow_params['experiment_name']}_model",
+            "model_version": "1.0.0",
+            "algorithm": train_params["algorithm"],
+            "training_date": datetime.now().isoformat(),
+            "mlflow_run_id": mlflow.active_run().info.run_id,
+            "data_version": mlflow_params["tags"]["data_version"],
+            "performance": {
+                "cv_accuracy": float(cv_scores.mean()),
+                "test_accuracy": float(test_metrics["accuracy"]),
+                "test_f1_score": float(test_metrics["f1_score"]),
+            },
+            "hyperparameters": train_params,
+            "feature_engineering": params["feature_engineering"],
+            "data_info": {
+                "training_samples": int(X_train.shape[0]),
+                "test_samples": int(X_test.shape[0]),
+                "features": int(X.shape[1]),
+                "target_classes": len(np.unique(y)),
+            },
+        }
+
+        with open(metadata_file, "w") as f:
+            yaml.dump(metadata, f, default_flow_style=False)
+
+        logger.info(f"Model metadata saved to {metadata_file}")
+
+        # Log artifacts to MLflow
+        mlflow.log_artifact(metrics_output, "metrics")
+        mlflow.log_artifact(metadata_file, "metadata")
+
+        logger.info("Training completed successfully!")
+        logger.info(f"MLflow run ID: {mlflow.active_run().info.run_id}")
+
+        return model, test_metrics
+
+
+def main():
+    """Main function with command line argument parsing."""
+    parser = argparse.ArgumentParser(description="Train ML model with MLflow logging")
+    parser.add_argument(
+        "--input", type=str, required=True, help="Input processed data CSV file"
+    )
+    parser.add_argument(
+        "--model-output", type=str, required=True, help="Output model pickle file"
+    )
+    parser.add_argument(
+        "--metrics", type=str, required=True, help="Output metrics JSON file"
+    )
+    parser.add_argument(
+        "--params", type=str, default="params.yaml", help="Parameters YAML file"
+    )
+
+    args = parser.parse_args()
+
+    # Train model
+    train_model(args.input, args.params, args.model_output, args.metrics)
+
+
+if __name__ == "__main__":
+    main()

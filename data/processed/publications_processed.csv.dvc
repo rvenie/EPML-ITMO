@@ -1,0 +1,5 @@
+outs:
+- md5: c18996c28c7ad3ccd460688c2aa760da
+  size: 6653
+  hash: md5
+  path: publications_processed.csv

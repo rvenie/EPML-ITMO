@@ -1,0 +1,136 @@
+# Parameters for ML Pipeline
+# This file contains all configurable parameters for the research publications ML pipeline
+
+# Feature Engineering Parameters
+feature_engineering:
+  tfidf_max_features: 5000
+  ngram_range: [1, 2] # Use unigrams and bigrams
+  min_df: 2 # Minimum document frequency
+  max_df: 0.95 # Maximum document frequency
+  use_tfidf: true
+  lowercase: true
+  stop_words: "english"
+
+  # Text processing
+  text_columns:
+    - "title_cleaned"
+    - "abstract_cleaned"
+    - "keywords"
+
+  # Categorical encoding
+  categorical_columns:
+    - "journal_category"
+    - "abstract_category"
+    - "citation_category"
+
+  # Numerical features
+  numerical_columns:
+    - "impact_score"
+    - "cited_by"
+    - "year"
+    - "title_length"
+    - "abstract_length"
+    - "author_count"
+    - "num_keywords"
+
+# Model Training Parameters
+train:
+  algorithm: "RandomForestClassifier" # Options: RandomForestClassifier, SVM, LogisticRegression
+  test_size: 0.2
+  random_state: 42
+
+  # Cross validation
+  cross_validation:
+    folds: 3
+    scoring: "accuracy"
+
+  # Model-specific parameters
+  random_forest:
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+    max_features: "sqrt"
+    bootstrap: true
+    oob_score: true
+
+  svm:
+    kernel: "rbf"
+    C: 1.0
+    gamma: "scale"
+    probability: true
+
+  logistic_regression:
+    penalty: "l2"
+    C: 1.0
+    max_iter: 1000
+    solver: "liblinear"
+
+# Model Evaluation Parameters
+evaluate:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+
+  # Classification target
+  target_column: "journal_category"
+
+  # Visualization settings
+  plot_style: "seaborn"
+  figure_size: [10, 8]
+  dpi: 300
+
+  # Report settings
+  include_classification_report: true
+  include_confusion_matrix: true
+  include_feature_importance: true
+  top_features_to_show: 20
+
+# Data Validation Parameters
+data_validation:
+  # Expected data quality thresholds
+  min_completeness: 0.95
+  max_missing_ratio: 0.05
+
+  # Expected data ranges
+  year_range: [2020, 2024]
+  min_citations: 0
+  max_citations: 1000
+
+  # Text field validation
+  min_title_length: 10
+  max_title_length: 500
+  min_abstract_length: 50
+  max_abstract_length: 2000
+
+# MLflow Tracking Parameters
+mlflow:
+  experiment_name: "research_publications_classification"
+  run_name: "baseline_model"
+  tracking_uri: "file:./mlruns"
+
+  # Tags
+  tags:
+    project: "research_agents_hub"
+    domain: "digital_pathology"
+    model_type: "classification"
+    data_version: "v1.0"
+
+  # Artifacts to log
+  log_artifacts:
+    - "models/"
+    - "reports/"
+    - "data/processed/processing_metadata.yaml"
+
+# Reproducibility Settings
+reproducibility:
+  seed: 42
+  deterministic: true
+
+# Resource Settings
+resources:
+  n_jobs: -1 # Use all available cores
+  memory_limit: "4G"

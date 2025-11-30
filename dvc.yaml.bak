@@ -1,0 +1,72 @@
+# DVC Pipeline Configuration
+# This file defines the machine learning pipeline stages for the research publications project
+
+stages:
+  preprocess:
+    cmd: python scripts/preprocess_data.py --input data/raw/publications.csv --output data/processed/publications_processed.csv --metadata data/processed/processing_metadata.yaml
+    deps:
+      - scripts/preprocess_data.py
+      - data/raw/publications.csv
+      - data/raw/data_metadata.yaml
+    outs:
+      - data/processed/publications_processed.csv
+      - data/processed/processing_metadata.yaml
+    desc: "Preprocess raw publication data for ML training"
+
+  feature_engineering:
+    cmd: python scripts/feature_engineering.py --input data/processed/publications_processed.csv --output data/processed/features.csv --params params.yaml
+    deps:
+      - scripts/feature_engineering.py
+      - data/processed/publications_processed.csv
+      - params.yaml
+    outs:
+      - data/processed/features.csv
+      - data/processed/feature_metadata.yaml
+    params:
+      - feature_engineering.max_features
+      - feature_engineering.ngram_range
+      - feature_engineering.min_df
+    desc: "Extract features from preprocessed data"
+
+  train:
+    cmd: python scripts/train_model.py --input data/processed/features.csv --model-output models/classifier.pkl --metrics metrics.json --params params.yaml
+    deps:
+      - scripts/train_model.py
+      - data/processed/features.csv
+      - params.yaml
+    outs:
+      - models/classifier.pkl
+      - models/model_metadata.yaml
+    metrics:
+      - metrics.json:
+          cache: false
+    params:
+      - train.algorithm
+      - train.test_size
+      - train.random_state
+      - train.cross_validation.folds
+    desc: "Train classification model on processed features"
+
+  evaluate:
+    cmd: python scripts/evaluate_model.py --model models/classifier.pkl --data data/processed/features.csv --output reports/evaluation.json
+    deps:
+      - scripts/evaluate_model.py
+      - models/classifier.pkl
+      - data/processed/features.csv
+    outs:
+      - reports/evaluation.json
+      - reports/confusion_matrix.png
+      - reports/feature_importance.png
+    metrics:
+      - reports/evaluation.json:
+          cache: false
+    desc: "Evaluate trained model and generate reports"
+
+# Global parameters file
+vars:
+  - params.yaml
+
+# Plots configuration
+plots:
+  - reports/confusion_matrix.png
+  - reports/feature_importance.png

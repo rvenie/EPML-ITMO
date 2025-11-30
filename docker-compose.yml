@@ -1,0 +1,173 @@
+# Docker Compose configuration for ML project with DVC and MLflow
+version: '3.8'
+
+services:
+  # MLflow Tracking Server
+  mlflow-server:
+    build:
+      context: .
+      target: base
+    container_name: mlflow-server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/app/mlruns
+      - ./mlartifacts:/app/mlartifacts
+      - ./data:/app/data
+      - ./models:/app/models
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=file:./mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=./mlartifacts
+    command: ["mlflow-server"]
+    networks:
+      - ml-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ML Application Service
+  ml-app:
+    build:
+      context: .
+      target: base
+    container_name: ml-app
+    depends_on:
+      - mlflow-server
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - ./mlruns:/app/mlruns
+      - ./scripts:/app/scripts
+      - ./researchhub:/app/researchhub
+      - ./params.yaml:/app/params.yaml
+      - ./dvc.yaml:/app/dvc.yaml
+      - ./requirements.txt:/app/requirements.txt
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
+      - DVC_STUDIO_OFFLINE=true
+      - PYTHONPATH=/app
+    networks:
+      - ml-network
+    restart: "no"
+    profiles:
+      - training
+
+  # Development Environment with Jupyter
+  jupyter-dev:
+    build:
+      context: .
+      target: development
+    container_name: jupyter-dev
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./notebooks:/app/notebooks
+      - ./mlruns:/app/mlruns
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
+      - JUPYTER_ENABLE_LAB=yes
+      - PYTHONPATH=/app
+    networks:
+      - ml-network
+    depends_on:
+      - mlflow-server
+    restart: unless-stopped
+    profiles:
+      - development
+
+  # Data Preprocessing Service
+  data-preprocessing:
+    build:
+      context: .
+      target: base
+    container_name: data-preprocessing
+    volumes:
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - ml-network
+    command: ["preprocess"]
+    restart: "no"
+    profiles:
+      - preprocessing
+
+  # Model Training Service
+  model-training:
+    build:
+      context: .
+      target: base
+    container_name: model-training
+    depends_on:
+      - mlflow-server
+      - data-preprocessing
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./scripts:/app/scripts
+      - ./mlruns:/app/mlruns
+      - ./params.yaml:/app/params.yaml
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
+      - PYTHONPATH=/app
+    networks:
+      - ml-network
+    command: ["train"]
+    restart: "no"
+    profiles:
+      - training
+
+networks:
+  ml-network:
+    driver: bridge
+
+volumes:
+  mlruns-data:
+  models-data:
+  data-storage:
+
+# Override configurations for different environments
+x-common-environment: &common-env
+  PYTHONPATH: /app
+  MLFLOW_TRACKING_URI: http://mlflow-server:5000
+  DVC_STUDIO_OFFLINE: true
+
+x-common-volumes: &common-volumes
+  - ./data:/app/data
+  - ./models:/app/models
+  - ./mlruns:/app/mlruns
+  - ./scripts:/app/scripts
+
+# Usage examples in comments:
+#
+# Development mode with Jupyter:
+# docker-compose --profile development up
+#
+# Start only MLflow server:
+# docker-compose up mlflow-server
+#
+# Run full training pipeline:
+# docker-compose --profile preprocessing up data-preprocessing
+# docker-compose --profile training up model-training
+#
+# Run everything for development:
+# docker-compose --profile development --profile training up
+#
+# Production deployment:
+# docker-compose up mlflow-server
+# docker-compose run --rm ml-app python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/classifier.pkl --metrics metrics.json
+#
+# Scale MLflow for high availability:
+# docker-compose up --scale mlflow-server=2
+#
+# Check DVC status:
+# docker-compose run --rm ml-app dvc-status
