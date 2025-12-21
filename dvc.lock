@@ -6,8 +6,8 @@ stages:
     deps:
     - path: scripts/fetch_arxiv_data.py
       hash: md5
-      md5: 9cd2d89b531270e7ce8a7b8c6faa2569
-      size: 13022
+      md5: f8f702789871bda59a32d483df30a600
+      size: 13353
     params:
       params.yaml:
         data.max_results: 100
@@ -15,9 +15,50 @@ stages:
     outs:
     - path: data/raw/arxiv_metadata.yaml
       hash: md5
-      md5: b14d3b814687ef0151781a15041748ec
-      size: 1306
+      md5: 53a066c616239e061feaf23bb4febefa
+      size: 1406
     - path: data/raw/arxiv_publications.csv
       hash: md5
-      md5: fb6b4609ccd6dae11eff2e023673566d
-      size: 16417
+      md5: 9233ec13f3220815298e716741d7bbe3
+      size: 174435
+  preprocess:
+    cmd: python scripts/preprocess_data.py --input data/raw/arxiv_publications.csv
+      --output data/processed/publications_processed.csv
+    deps:
+    - path: data/raw/arxiv_metadata.yaml
+      hash: md5
+      md5: 53a066c616239e061feaf23bb4febefa
+      size: 1406
+    - path: data/raw/arxiv_publications.csv
+      hash: md5
+      md5: 9233ec13f3220815298e716741d7bbe3
+      size: 174435
+    - path: scripts/preprocess_data.py
+      hash: md5
+      md5: dca6dc990b1671e6fdfadfcea147d4cd
+      size: 10028
+    params:
+      params.yaml:
+        feature_engineering.categorical_columns:
+        - journal_category
+        - year_category
+        - author_count_category
+        feature_engineering.numerical_columns:
+        - year
+        - title_length
+        - abstract_length
+        - author_count
+        - num_keywords
+        feature_engineering.text_columns:
+        - title
+        - abstract
+        - keywords
+    outs:
+    - path: data/processed/processing_metadata.yaml
+      hash: md5
+      md5: d7d2aafba07ffe08933ebe9c8cd74850
+      size: 706
+    - path: data/processed/publications_processed.csv
+      hash: md5
+      md5: 667e2147a0af914b2eedbcd49dd0e0c6
+      size: 320745

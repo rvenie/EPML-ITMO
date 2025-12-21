@@ -111,7 +111,7 @@ def calculate_impact_score(cited_by: int, year: int) -> float:
     # Простой индекс влияния (может быть улучшен более сложными метриками)
     impact_score = np.log1p(citations_per_year) * (1 / np.sqrt(years_since_publication))
 
-    return round(impact_score, 3)
+    return float(round(impact_score, 3))
 
 
 def preprocess_data(
@@ -172,6 +172,20 @@ def preprocess_data(
         df["cited_by"],
         bins=[0, 50, 100, 200, float("inf")],
         labels=["low", "medium", "high", "very_high"],
+    )
+
+    # Create year categories
+    df["year_category"] = pd.cut(
+        df["year"],
+        bins=[0, 2020, 2022, 2024, float("inf")],
+        labels=["old", "recent", "very_recent", "latest"],
+    )
+
+    # Create author count categories
+    df["author_count_category"] = pd.cut(
+        df["author_count"],
+        bins=[0, 3, 6, 10, float("inf")],
+        labels=["few", "several", "many", "very_many"],
     )
 
     # Remove rows with missing critical data

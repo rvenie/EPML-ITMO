@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/rvenie/Yandex.Disk.localized/workspace/learn/EnginPractML/research_agets_hub/mlruns/317899650776771811/83f9884e8813425f8659b4c50f0e5313/artifacts
+end_time: 1766349846460
+entry_point_name: ''
+experiment_id: '317899650776771811'
+lifecycle_stage: active
+run_id: 83f9884e8813425f8659b4c50f0e5313
+run_name: exp_08_SVM_high_C
+run_uuid: 83f9884e8813425f8659b4c50f0e5313
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1766349846437
+status: 4
+tags: []
+user_id: rvenie
