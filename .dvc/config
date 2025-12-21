@@ -2,4 +2,4 @@
     autostage = true
     remote = local_storage
 ['remote "local_storage"']
-    url = ./.dvc_storage
+    url = ../../../dvc_storage
