@@ -8,7 +8,7 @@ import functools
 import logging
 import time
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import mlflow
 import mlflow.tracking
@@ -56,7 +56,7 @@ class MLflowExperimentManager:
         )
         return experiment_id
 
-    def list_experiments(self) -> List[Experiment]:
+    def list_experiments(self) -> list[Experiment]:
         """Возвращает список всех экспериментов."""
         return self.client.search_experiments()
 
@@ -64,9 +64,9 @@ class MLflowExperimentManager:
         self,
         experiment_name: str,
         filter_string: str = "",
-        order_by: List[str] = None,
+        order_by: list[str] = None,
         max_results: int = 1000,
-    ) -> List[Run]:
+    ) -> list[Run]:
         """
         Получает запуски эксперимента с фильтрацией.
 
@@ -93,7 +93,7 @@ class MLflowExperimentManager:
 
     def get_best_run(
         self, experiment_name: str, metric_name: str, maximize: bool = True
-    ) -> Optional[Run]:
+    ) -> Run | None:
         """
         Находит лучший запуск по указанной метрике.
 
@@ -113,7 +113,7 @@ class MLflowExperimentManager:
         return runs[0] if runs else None
 
     def compare_runs(
-        self, run_ids: List[str], metrics: List[str] = None
+        self, run_ids: list[str], metrics: list[str] = None
     ) -> pd.DataFrame:
         """
         Сравнивает запуски по указанным метрикам.
@@ -247,7 +247,7 @@ class MLflowExperimentManager:
 def mlflow_experiment(
     experiment_name: str,
     run_name: str = None,
-    tags: Dict[str, Any] = None,
+    tags: dict[str, Any] = None,
     auto_log: bool = True,
 ):
     """
@@ -307,7 +307,7 @@ def mlflow_experiment(
 def mlflow_run_context(
     experiment_name: str,
     run_name: str = None,
-    tags: Dict[str, Any] = None,
+    tags: dict[str, Any] = None,
     nested: bool = False,
 ):
     """
@@ -356,7 +356,7 @@ class MLflowModelRegistry:
         self.client = MlflowClient(tracking_uri)
 
     def register_model(
-        self, model_uri: str, model_name: str, tags: Dict[str, Any] = None
+        self, model_uri: str, model_name: str, tags: dict[str, Any] = None
     ) -> str:
         """
         Регистрирует модель в Model Registry.
@@ -382,7 +382,7 @@ class MLflowModelRegistry:
 
     def get_latest_model_version(
         self, model_name: str, stage: str = "None"
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Получает последнюю версию модели.
 
@@ -430,7 +430,7 @@ class MLflowModelRegistry:
 
 def search_runs_by_metrics(
     experiment_name: str,
-    metric_thresholds: Dict[str, Tuple[float, str]] = None,
+    metric_thresholds: dict[str, tuple[float, str]] = None,
     tracking_uri: str = "file:./mlruns",
 ) -> pd.DataFrame:
     """
@@ -559,7 +559,7 @@ def create_experiment_summary_report(
 
 # Удобные функции для быстрого доступа
 def quick_compare_algorithms(
-    experiment_name: str, algorithms: List[str], tracking_uri: str = "file:./mlruns"
+    experiment_name: str, algorithms: list[str], tracking_uri: str = "file:./mlruns"
 ) -> pd.DataFrame:
     """Быстрое сравнение алгоритмов в эксперименте."""
     manager = MLflowExperimentManager(tracking_uri)

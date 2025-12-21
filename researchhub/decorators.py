@@ -9,8 +9,9 @@ import json
 import logging
 import time
 import traceback
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import mlflow
 import mlflow.sklearn
@@ -23,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 def mlflow_track(
     experiment_name: str,
-    run_name: Optional[str] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    run_name: str | None = None,
+    tags: dict[str, Any] | None = None,
     log_params: bool = True,
     log_artifacts: bool = True,
     log_model: bool = True,
@@ -141,7 +142,7 @@ def log_execution_time(func: Callable) -> Callable:
 
 
 def log_model_metrics(
-    metrics_to_log: Optional[List[str]] = None,
+    metrics_to_log: list[str] | None = None,
     prefix: str = "",
 ):
     """
@@ -307,8 +308,8 @@ def handle_exceptions(
 
 def conditional_log(
     condition_func: Callable[..., bool],
-    log_on_true: Dict[str, Any] = None,
-    log_on_false: Dict[str, Any] = None,
+    log_on_true: dict[str, Any] = None,
+    log_on_false: dict[str, Any] = None,
 ):
     """
     Декоратор для условного логирования.
@@ -382,7 +383,7 @@ def _log_function_params(func: Callable, args: tuple, kwargs: dict):
         logger.warning(f"Не удалось залогировать параметры функции: {e}")
 
 
-def _serialize_param(value: Any) -> Optional[str]:
+def _serialize_param(value: Any) -> str | None:
     """Сериализует параметр для логирования."""
     if value is None:
         return "None"
@@ -486,7 +487,7 @@ def _log_dataframe_info(
 
 def track_ml_experiment(
     experiment_name: str,
-    run_name: Optional[str] = None,
+    run_name: str | None = None,
     auto_log: bool = True,
     log_dataset: bool = True,
     save_model: bool = True,

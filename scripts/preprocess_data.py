@@ -10,7 +10,6 @@ import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -116,7 +115,7 @@ def calculate_impact_score(cited_by: int, year: int) -> float:
 
 
 def preprocess_data(
-    input_file: str, output_file: str, metadata_file: Optional[str] = None
+    input_file: str, output_file: str, metadata_file: str | None = None
 ) -> None:
     """
     Основная функция предобработки.

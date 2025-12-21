@@ -10,9 +10,10 @@ import logging
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
+
 from train_model import train_model
 
 # Настройка логирования
@@ -25,13 +26,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_base_params(params_file: str = "params.yaml") -> Dict[str, Any]:
+def load_base_params(params_file: str = "params.yaml") -> dict[str, Any]:
     """Загружает базовые параметры из файла."""
-    with open(params_file, "r") as f:
+    with open(params_file) as f:
         return yaml.safe_load(f)
 
 
-def create_experiment_configs() -> List[Dict[str, Any]]:
+def create_experiment_configs() -> list[dict[str, Any]]:
     """Создает список конфигураций для различных экспериментов."""
     base_params = load_base_params()
 
@@ -210,8 +211,8 @@ def create_experiment_configs() -> List[Dict[str, Any]]:
 
 
 def run_single_experiment(
-    exp_config: Dict[str, Any], data_file: str, base_output_dir: str
-) -> Dict[str, Any]:
+    exp_config: dict[str, Any], data_file: str, base_output_dir: str
+) -> dict[str, Any]:
     """Запускает один эксперимент и возвращает результаты."""
     exp_name = exp_config["name"]
     params = exp_config["params"]
@@ -243,7 +244,7 @@ def run_single_experiment(
         end_time = time.time()
 
         # Загружаем результаты
-        with open(metrics_output, "r") as f:
+        with open(metrics_output) as f:
             metrics = json.load(f)
 
         result = {
@@ -284,7 +285,7 @@ def run_single_experiment(
     return result
 
 
-def analyze_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+def analyze_results(results: list[dict[str, Any]]) -> dict[str, Any]:
     """Анализирует результаты всех экспериментов."""
     successful_results = [r for r in results if r["status"] == "success"]
 
@@ -331,7 +332,7 @@ def analyze_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def save_experiment_summary(
-    results: List[Dict[str, Any]], analysis: Dict[str, Any], output_file: str
+    results: list[dict[str, Any]], analysis: dict[str, Any], output_file: str
 ):
     """Сохраняет сводку результатов экспериментов."""
     summary = {
@@ -346,7 +347,7 @@ def save_experiment_summary(
     logger.info(f"Сводка экспериментов сохранена в {output_file}")
 
 
-def print_summary(analysis: Dict[str, Any]):
+def print_summary(analysis: dict[str, Any]):
     """Выводит краткую сводку результатов в консоль."""
     print("\n" + "=" * 80)
     print("СВОДКА ЭКСПЕРИМЕНТОВ")

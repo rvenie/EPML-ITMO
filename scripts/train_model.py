@@ -11,7 +11,7 @@ import logging
 import pickle  # nosec
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any
 
 # MLflow
 import mlflow
@@ -45,10 +45,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_params(params_file: str) -> Dict[str, Any]:
+def load_params(params_file: str) -> dict[str, Any]:
     """Загружает параметры из YAML файла."""
     try:
-        with open(params_file, "r") as f:
+        with open(params_file) as f:
             params = yaml.safe_load(f)
         logger.info(f"Loaded parameters from {params_file}")
         return params
@@ -69,8 +69,8 @@ def load_data(data_file: str) -> pd.DataFrame:
 
 
 def create_features(
-    df: pd.DataFrame, params: Dict[str, Any]
-) -> Tuple[np.ndarray, np.ndarray, TfidfVectorizer]:
+    df: pd.DataFrame, params: dict[str, Any]
+) -> tuple[np.ndarray, np.ndarray, TfidfVectorizer]:
     """Создает матрицу признаков и целевой вектор."""
     feature_params = params["feature_engineering"]
 
@@ -112,7 +112,7 @@ def create_features(
     return X, y, tfidf
 
 
-def get_model(algorithm: str, params: Dict[str, Any]):
+def get_model(algorithm: str, params: dict[str, Any]):
     """Возвращает экземпляр модели на основе алгоритма и параметров."""
     if algorithm == "RandomForestClassifier":
         rf_params = params["train"]["random_forest"]
@@ -150,7 +150,7 @@ def get_model(algorithm: str, params: Dict[str, Any]):
         raise ValueError(f"Unsupported algorithm: {algorithm}")
 
 
-def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
+def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> dict[str, float]:
     """Оценивает модель и возвращает метрики."""
     y_pred = model.predict(X_test)
     y_pred_proba = (
