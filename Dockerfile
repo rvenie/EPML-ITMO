@@ -1,11 +1,14 @@
-# Многоэтапный Dockerfile для ML проекта с поддержкой DVC и MLflow
-FROM python:3.11-slim as base
+# Многоэтапный Dockerfile для ML проекта с Poetry, DVC и MLflow
+FROM python:3.11-slim AS base
 
 # Установка переменных окружения
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VENV_IN_PROJECT=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
 
 # Установка системных зависимостей
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -14,114 +17,223 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Установка Poetry
+RUN pip install poetry==2.2.1
+
 # Установка рабочей директории
 WORKDIR /app
 
-# Сначала копируем requirements для лучшего кеширования
-COPY requirements.txt .
-COPY pyproject.toml .
+# Копирование файлов Poetry для установки зависимостей
+COPY pyproject.toml poetry.lock README.md ./
 
-# Установка зависимостей Python
-RUN pip install --no-cache-dir -r requirements.txt
+# Установка зависимостей через Poetry
+RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 
-# Установка дополнительных ML/DVC/MLflow зависимостей если их нет в requirements
-RUN pip install --no-cache-dir \
-    dvc[s3]==3.64.0 \
-    mlflow==2.22.2 \
-    boto3==1.41.5
+# Копирование файлов конфигурации
+COPY params.yaml dvc.yaml ./
+COPY .dvc/ .dvc/
 
-# Копирование файлов проекта
-COPY . .
+# Копирование исходного кода
+COPY researchhub/ researchhub/
+COPY scripts/ scripts/
+
+# Установка текущего проекта
+RUN poetry install --only-root && rm -rf $POETRY_CACHE_DIR
 
 # Создание необходимых директорий
-RUN mkdir -p data/raw data/processed models reports mlruns
+RUN mkdir -p data/raw data/processed models reports mlruns mlartifacts
 
-# Настройка DVC (инициализация если .dvc не существует)
-RUN if [ ! -d ".dvc" ]; then dvc init --no-scm; fi
+# Открытие портов для MLflow и Jupyter
+EXPOSE 3000 8888
 
-# Открытие порта MLflow
-EXPOSE 5000
-
-# Создание скрипта entrypoint
+# Создание entrypoint скрипта
 RUN echo '#!/bin/bash\n\
     set -e\n\
     \n\
-    # Pull data from DVC if available\n\
-    if [ -f "data/raw/publications.csv.dvc" ]; then\n\
-    echo "Pulling data from DVC..."\n\
-    dvc pull || echo "DVC pull failed, continuing..."\n\
-    fi\n\
+    echo "=== Research Agents Hub Container Starting ==="\n\
+    echo "Using params from: $(pwd)/params.yaml"\n\
     \n\
-    # Check if MLflow server should be started\n\
-    if [ "$1" = "mlflow-server" ]; then\n\
-    echo "Starting MLflow server..."\n\
-    mlflow server \
-    --host 0.0.0.0 \
-    --port 5000 \
-    --backend-store-uri file:./mlruns \
-    --default-artifact-root ./mlartifacts\n\
-    elif [ "$1" = "train" ]; then\n\
-    echo "Starting model training..."\n\
-    python scripts/preprocess_data.py\n\
-    python scripts/train_model.py \
-    --input data/processed/publications_processed.csv \
-    --model-output models/classifier.pkl \
-    --metrics metrics.json\n\
-    elif [ "$1" = "preprocess" ]; then\n\
-    echo "Running data preprocessing..."\n\
-    python scripts/preprocess_data.py\n\
-    elif [ "$1" = "dvc-status" ]; then\n\
-    echo "Checking DVC status..."\n\
-    dvc status\n\
-    dvc dag\n\
+    # Функция для чтения параметров из params.yaml\n\
+    get_param() {\n\
+    python -c "import yaml; config=yaml.safe_load(open(\"params.yaml\")); print(config[\"$1\"][\"$2\"])"\n\
+    }\n\
+    \n\
+    # Функция для настройки MLflow из params.yaml\n\
+    setup_mlflow() {\n\
+    export MLFLOW_EXPERIMENT_NAME=$(get_param "mlflow" "experiment_name")\n\
+    export MLFLOW_TRACKING_URI=$(get_param "mlflow" "tracking_uri")\n\
+    echo "MLflow experiment: $MLFLOW_EXPERIMENT_NAME"\n\
+    echo "MLflow tracking URI: $MLFLOW_TRACKING_URI"\n\
+    }\n\
+    \n\
+    # Проверка доступности данных\n\
+    check_data() {\n\
+    if [ -f ".dvc/config" ]; then\n\
+    echo "DVC configuration found"\n\
+    poetry run dvc remote list\n\
+    echo "Attempting to pull data..."\n\
+    poetry run dvc pull || echo "Warning: DVC pull failed, continuing without remote data"\n\
     else\n\
-    # Execute the command passed to docker run\n\
+    echo "No DVC configuration found"\n\
+    fi\n\
+    }\n\
+    \n\
+    # Валидация параметров\n\
+    validate_params() {\n\
+    if [ ! -f "params.yaml" ]; then\n\
+    echo "Error: params.yaml not found!"\n\
+    exit 1\n\
+    fi\n\
+    echo "✓ params.yaml found and loaded"\n\
+    \n\
+    # Показать основные параметры\n\
+    echo "Model algorithm: $(get_param \"train\" \"algorithm\")"\n\
+    echo "Test size: $(get_param \"train\" \"test_size\")"\n\
+    echo "Random state: $(get_param \"train\" \"random_state\")"\n\
+    }\n\
+    \n\
+    case "$1" in\n\
+    "mlflow-server")\n\
+    echo "🚀 Starting MLflow server..."\n\
+    validate_params\n\
+    setup_mlflow\n\
+    poetry run mlflow server \\\n\
+    --host 0.0.0.0 \\\n\
+    --port 3000 \\\n\
+    --backend-store-uri file:./mlruns \\\n\
+    --default-artifact-root ./mlartifacts\n\
+    ;;\n\
+    "pipeline")\n\
+    echo "🔄 Running full DVC pipeline..."\n\
+    validate_params\n\
+    check_data\n\
+    setup_mlflow\n\
+    poetry run dvc repro\n\
+    echo "✅ Pipeline completed!"\n\
+    ;;\n\
+    "train")\n\
+    echo "🎯 Training model with parameters from params.yaml..."\n\
+    validate_params\n\
+    setup_mlflow\n\
+    poetry run python scripts/train_model.py \\\n\
+    --input data/processed/features.csv \\\n\
+    --model-output models/classifier.pkl \\\n\
+    --metrics metrics.json \\\n\
+    --params params.yaml\n\
+    ;;\n\
+    "preprocess")\n\
+    echo "🔧 Running data preprocessing..."\n\
+    validate_params\n\
+    poetry run python scripts/preprocess_data.py \\\n\
+    --input data/raw/publications.csv \\\n\
+    --output data/processed/publications_processed.csv \\\n\
+    --metadata data/processed/processing_metadata.yaml\n\
+    ;;\n\
+    "feature-engineering")\n\
+    echo "⚙️ Running feature engineering..."\n\
+    validate_params\n\
+    poetry run python scripts/feature_engineering.py \\\n\
+    --input data/processed/publications_processed.csv \\\n\
+    --output data/processed/features.csv \\\n\
+    --params params.yaml\n\
+    ;;\n\
+    "evaluate")\n\
+    echo "📊 Evaluating model..."\n\
+    validate_params\n\
+    poetry run python scripts/evaluate_model.py \\\n\
+    --model models/classifier.pkl \\\n\
+    --data data/processed/features.csv \\\n\
+    --output reports/evaluation.json\n\
+    ;;\n\
+    "dvc-status")\n\
+    echo "📋 Checking DVC status..."\n\
+    poetry run dvc status\n\
+    poetry run dvc dag\n\
+    ;;\n\
+    "params-info")\n\
+    echo "📄 Current parameters:"\n\
+    cat params.yaml\n\
+    ;;\n\
+    "jupyter")\n\
+    echo "📓 Starting Jupyter Lab..."\n\
+    poetry run jupyter lab \\\n\
+    --ip=0.0.0.0 \\\n\
+    --port=8888 \\\n\
+    --no-browser \\\n\
+    --allow-root \\\n\
+    --NotebookApp.token=\"\" \\\n\
+    --NotebookApp.password=\"\"\n\
+    ;;\n\
+    "bash")\n\
+    echo "🐚 Starting interactive bash shell..."\n\
+    exec /bin/bash\n\
+    ;;\n\
+    *)\n\
+    echo "Available commands:"\n\
+    echo "  mlflow-server    - Start MLflow tracking server"\n\
+    echo "  pipeline         - Run full DVC pipeline"\n\
+    echo "  train           - Train model only"\n\
+    echo "  preprocess      - Run data preprocessing"\n\
+    echo "  feature-engineering - Run feature engineering"\n\
+    echo "  evaluate        - Evaluate trained model"\n\
+    echo "  dvc-status      - Show DVC pipeline status"\n\
+    echo "  params-info     - Show current parameters"\n\
+    echo "  jupyter         - Start Jupyter Lab"\n\
+    echo "  bash            - Interactive shell"\n\
+    echo ""\n\
+    echo "Or run custom command: $@"\n\
     exec "$@"\n\
-    fi' > /app/entrypoint.sh
+    ;;\n\
+    esac' > /app/entrypoint.sh
 
 # Делаем entrypoint исполняемым
 RUN chmod +x /app/entrypoint.sh
 
-# Настройка проверки здоровья для MLflow сервера
+# Настройка проверки здоровья
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:5000/ || exit 1
+    CMD python -c "import sys; sys.exit(0)" || exit 1
 
 # Команда по умолчанию
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["python", "researchhub/main.py"]
+CMD ["params-info"]
 
-# Многоэтапная сборка для разработки
-FROM base as development
+# === DEVELOPMENT STAGE ===
+FROM base AS development
 
-# Установка зависимостей для разработки
-RUN pip install --no-cache-dir \
+# Установка dev зависимостей
+RUN poetry install && rm -rf $POETRY_CACHE_DIR
+
+# Установка дополнительных dev инструментов
+RUN poetry run pip install \
     jupyter \
-    notebook \
     jupyterlab \
-    pytest \
-    black \
-    flake8
+    ipywidgets
 
-# Открытие порта Jupyter
-EXPOSE 8888
+# Копирование дополнительных dev файлов
+COPY notebooks/ notebooks/
+COPY tests/ tests/
+COPY Makefile README.md ./
 
-# Переопределение entrypoint для разработки
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''"]
+# Команда по умолчанию для разработки
+CMD ["jupyter"]
 
-# Продакшен стадия
-FROM base as production
+# === PRODUCTION STAGE ===
+FROM base AS production
 
-# Удаление ненужных файлов
+# Удаление ненужных файлов для продакшена
 RUN find . -type f -name "*.pyc" -delete && \
     find . -type d -name "__pycache__" -delete && \
-    rm -rf .git .pytest_cache .mypy_cache
+    rm -rf tests/ notebooks/ .git .pytest_cache .mypy_cache
 
-# Запуск от имени не-root пользователя для безопасности
+# Создание пользователя для безопасности
 RUN useradd --create-home --shell /bin/bash mluser && \
     chown -R mluser:mluser /app
 
 USER mluser
 
-# Проверка здоровья для продакшена
+# Оптимизированная проверка здоровья для продакшена
 HEALTHCHECK --interval=60s --timeout=30s --start-period=60s --retries=3 \
-    CMD python -c "import sys; sys.exit(0)" || exit 1
+    CMD poetry run python -c "import researchhub; print('OK')" || exit 1
+
+# Команда по умолчанию для продакшена
+CMD ["pipeline"]

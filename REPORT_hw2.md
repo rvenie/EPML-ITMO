@@ -24,9 +24,8 @@
 # Инициализация DVC в проекте
 dvc init
 
-# Настройка локального remote storage
-mkdir -p ../dvc-storage
-dvc remote add -d local_storage ../dvc-storage
+# Настройка Google Drive remote storage для воспроизводимости
+dvc remote add -d gdrive_storage gdrive://133mVXq1xIxJMEDuN_7haphoHf8ZqD9g0
 
 # Включение автоматического добавления .dvc файлов в Git
 dvc config core.autostage true
@@ -205,12 +204,15 @@ services:
 
 ### Локальный запуск
 ```bash
-# Установка зависимостей
-pip install -r requirements.txt
+# Установка зависимостей через Poetry
+poetry install
+
+# Получение данных из DVC remote
+poetry run dvc pull
 
 # Воспроизведение результатов
-python scripts/preprocess_data.py
-python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/classifier.pkl --metrics metrics.json
+poetry run python scripts/preprocess_data.py
+poetry run python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/classifier.pkl --metrics metrics.json
 ```
 
 ### Docker запуск
@@ -231,6 +233,73 @@ dvc status
 ```
 ![DVC](pics/dvc.png)
 
+## Инструкция по воспроизводимости 
+```bash
+# 1. Клонирование репозитория
+git clone <repository_url>
+cd research_agets_hub
+
+# 2. Запуск MLflow сервера
+docker-compose up -d mlflow-server
+
+# 3. Проверка доступности MLflow UI (должно открыться в браузере)
+open http://localhost:3000
+
+# 4. Запуск полного обучения модели
+docker-compose run --rm ml-app train
+```
+
+### Пошаговая инструкци
+### Шаг 1: Сборка и запуск сервисов
+```bash
+# Сборка базового образа
+docker-compose build mlflow-server
+
+# Запуск MLflow сервера в фоне
+docker-compose up -d mlflow-server
+
+# Проверка статуса сервиса
+docker-compose ps
+```
+
+**Ожидаемый результат**: 
+```
+NAME            COMMAND           SERVICE          STATUS    PORTS
+mlflow-server   "mlflow-server"   mlflow-server    running   0.0.0.0:3000->3000/tcp
+```
+
+#### Шаг 2: Верификация MLflow UI
+
+```bash
+# Проверка доступности API
+curl -f http://localhost:3000/api/2.0/mlflow/experiments/search
+
+# Проверка веб-интерфейса (должен вернуть HTML)
+curl -s http://localhost:3000 | head -n 5
+```
+
+**Ожидаемый результат**: JSON ответ для API и HTML для веб-интерфейса
+
+
+
+### Способ через Poetry
+
+Если Docker недоступен:
+
+```bash
+# 1. Установка Poetry
+curl -sSL https://install.python-poetry.org | python3 -
+
+# 2. Установка зависимостей
+poetry install
+
+# 3. Проверка конфигурации DVC
+poetry run dvc remote list
+
+# 4. Запуск MLflow сервера (в фоне)
+nohup poetry run mlflow server --host 127.0.0.1 --port 3000 --backend-store-uri file:./mlruns > mlflow.log 2>&1 &
+
+
 ## Git workflow для версионирования
 
 ### Структура веток
@@ -243,3 +312,16 @@ dvc status
 git add .dvc/config data/raw/*.dvc data/processed/*.dvc models/*.dvc
 git commit -m "feat: ..."
 ```
+
+## Дополнительные материалы
+
+### 📋 Шпаргалка для быстрого воспроизведения
+Для удобства менторов создан отдельный файл с краткими командами: [`REPRODUCTION_GUIDE.md`](REPRODUCTION_GUIDE.md)
+
+Этот файл содержит:
+- Команды быстрого старта (5 минут)
+- Ключевые Docker Compose команды
+- Альтернативные команды через Poetry
+- Ожидаемые результаты и индикаторы успеха
+- Решения типичных проблем
+- Контрольные точки процесса

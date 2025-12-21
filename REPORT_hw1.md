@@ -27,6 +27,7 @@ poetry init --name research-agets-hub -n
 poetry add pandas numpy scikit-learn
 poetry add --group dev ruff mypy bandit pre-commit
 poetry self add poetry-plugin-export
+# Экспорт requirements.txt нужен только для совместимости с CI/CD (опционально)
 poetry export -f requirements.txt --output requirements.txt --without-hashes
 ```
 

@@ -1,4 +1,4 @@
-# Конфигурация Docker Compose для ML проекта с DVC и MLflow
+# Конфигурация Docker Compose для ML проекта с Poetry, DVC и MLflow
 version: "3.8"
 
 services:
@@ -9,21 +9,23 @@ services:
       target: base
     container_name: mlflow-server
     ports:
-      - "5000:5000"
+      - "3000:3000"
     volumes:
       - ./mlruns:/app/mlruns
       - ./mlartifacts:/app/mlartifacts
       - ./data:/app/data
       - ./models:/app/models
+      - ./params.yaml:/app/params.yaml
     environment:
       - MLFLOW_BACKEND_STORE_URI=file:./mlruns
       - MLFLOW_DEFAULT_ARTIFACT_ROOT=./mlartifacts
+      - PYTHONPATH=/app
     command: ["mlflow-server"]
     networks:
       - ml-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -46,9 +48,9 @@ services:
       - ./researchhub:/app/researchhub
       - ./params.yaml:/app/params.yaml
       - ./dvc.yaml:/app/dvc.yaml
-      - ./requirements.txt:/app/requirements.txt
+      - ./.dvc:/app/.dvc
     environment:
-      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
+      - MLFLOW_TRACKING_URI=http://mlflow-server:3000
       - DVC_STUDIO_OFFLINE=true
       - PYTHONPATH=/app
     networks:
@@ -71,8 +73,9 @@ services:
       - ./models:/app/models
       - ./notebooks:/app/notebooks
       - ./mlruns:/app/mlruns
+      - ./params.yaml:/app/params.yaml
     environment:
-      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
+      - MLFLOW_TRACKING_URI=http://mlflow-server:3000
       - JUPYTER_ENABLE_LAB=yes
       - PYTHONPATH=/app
     networks:
@@ -92,8 +95,11 @@ services:
     volumes:
       - ./data:/app/data
       - ./scripts:/app/scripts
+      - ./params.yaml:/app/params.yaml
+      - ./.dvc:/app/.dvc
     environment:
       - PYTHONPATH=/app
+      - DVC_STUDIO_OFFLINE=true
     networks:
       - ml-network
     command: ["preprocess"]
@@ -109,19 +115,22 @@ services:
     container_name: model-training
     depends_on:
       - mlflow-server
-      - data-preprocessing
     volumes:
       - ./data:/app/data
       - ./models:/app/models
+      - ./reports:/app/reports
       - ./scripts:/app/scripts
       - ./mlruns:/app/mlruns
       - ./params.yaml:/app/params.yaml
+      - ./dvc.yaml:/app/dvc.yaml
+      - ./.dvc:/app/.dvc
     environment:
-      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
+      - MLFLOW_TRACKING_URI=http://mlflow-server:3000
       - PYTHONPATH=/app
+      - DVC_STUDIO_OFFLINE=true
     networks:
       - ml-network
-    command: ["train"]
+    command: ["pipeline"]
     restart: "no"
     profiles:
       - training
@@ -138,7 +147,7 @@ volumes:
 # Переопределение конфигураций для разных сред
 x-common-environment: &common-env
   PYTHONPATH: /app
-  MLFLOW_TRACKING_URI: http://mlflow-server:5000
+  MLFLOW_TRACKING_URI: http://mlflow-server:3000
   DVC_STUDIO_OFFLINE: true
 
 x-common-volumes: &common-volumes
@@ -146,6 +155,8 @@ x-common-volumes: &common-volumes
   - ./models:/app/models
   - ./mlruns:/app/mlruns
   - ./scripts:/app/scripts
+  - ./params.yaml:/app/params.yaml
+  - ./.dvc:/app/.dvc
 
 # Примеры использования в комментариях:
 #
@@ -156,18 +167,29 @@ x-common-volumes: &common-volumes
 # docker-compose up mlflow-server
 #
 # Запуск полного пайплайна обучения:
-# docker-compose --profile preprocessing up data-preprocessing
 # docker-compose --profile training up model-training
+#
+# Запуск предобработки данных:
+# docker-compose --profile preprocessing up data-preprocessing
 #
 # Запуск всего для разработки:
 # docker-compose --profile development --profile training up
 #
+# Проверка параметров из params.yaml:
+# docker-compose run --rm ml-app params-info
+#
+# Запуск полного DVC pipeline:
+# docker-compose run --rm ml-app pipeline
+#
 # Развертывание в продакшене:
 # docker-compose up mlflow-server
-# docker-compose run --rm ml-app python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/classifier.pkl --metrics metrics.json
+# docker-compose run --rm ml-app train
 #
 # Масштабирование MLflow для высокой доступности:
 # docker-compose up --scale mlflow-server=2
 #
 # Проверка статуса DVC:
 # docker-compose run --rm ml-app dvc-status
+#
+# Интерактивная работа:
+# docker-compose run --rm ml-app bash
