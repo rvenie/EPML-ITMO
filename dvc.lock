@@ -1,0 +1,23 @@
+schema: '2.0'
+stages:
+  fetch_data:
+    cmd: python scripts/fetch_arxiv_data.py --query "cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM
+      OR cat:cs.LG" --max-results 100 --output-dir data/raw
+    deps:
+    - path: scripts/fetch_arxiv_data.py
+      hash: md5
+      md5: 9cd2d89b531270e7ce8a7b8c6faa2569
+      size: 13022
+    params:
+      params.yaml:
+        data.max_results: 100
+        data.query: cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM OR cat:cs.LG
+    outs:
+    - path: data/raw/arxiv_metadata.yaml
+      hash: md5
+      md5: b14d3b814687ef0151781a15041748ec
+      size: 1306
+    - path: data/raw/arxiv_publications.csv
+      hash: md5
+      md5: fb6b4609ccd6dae11eff2e023673566d
+      size: 16417

@@ -1,50 +1,57 @@
-# Параметры для ML пайплайна
-# Этот файл содержит все настраиваемые параметры для ML пайплайна анализа научных публикаций
+# ML Pipeline Parameters
+# Configuration file for research publications analysis pipeline
 
-# Параметры инженерии признаков
+# Data fetching parameters
+data:
+  query: "cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM OR cat:cs.LG"
+  max_results: 100
+  source: "arxiv"
+  output_format: "csv"
+
+# Feature engineering parameters
 feature_engineering:
+  # TF-IDF parameters
   tfidf_max_features: 5000
-  ngram_range: [1, 2] # Используем униграммы и биграммы
-  min_df: 2 # Минимальная частота документа
-  max_df: 0.95 # Максимальная частота документа
+  ngram_range: [1, 2]
+  min_df: 2
+  max_df: 0.95
   use_tfidf: true
   lowercase: true
   stop_words: "english"
 
-  # Обработка текста
+  # Text columns to process
   text_columns:
-    - "title_cleaned"
-    - "abstract_cleaned"
+    - "title"
+    - "abstract"
     - "keywords"
 
-  # Кодирование категориальных признаков
+  # Categorical columns
   categorical_columns:
     - "journal_category"
-    - "abstract_category"
-    - "citation_category"
+    - "year_category"
+    - "author_count_category"
 
-  # Числовые признаки
+  # Numerical columns
   numerical_columns:
-    - "impact_score"
-    - "cited_by"
     - "year"
     - "title_length"
     - "abstract_length"
     - "author_count"
     - "num_keywords"
 
-# Параметры обучения модели
+# Training parameters
 train:
-  algorithm: "RandomForestClassifier" # Варианты: RandomForestClassifier, SVM, LogisticRegression
+  algorithm: "RandomForestClassifier"
   test_size: 0.2
   random_state: 42
 
-  # Кросс-валидация
+  # Cross-validation
   cross_validation:
-    folds: 3
+    folds: 5
     scoring: "accuracy"
+    stratify: true
 
-  # Специфичные параметры модели
+  # Random Forest parameters
   random_forest:
     n_estimators: 100
     max_depth: 10
@@ -54,6 +61,7 @@ train:
     bootstrap: true
     oob_score: true
 
+  # Alternative algorithms (for experimentation)
   svm:
     kernel: "rbf"
     C: 1.0
@@ -66,91 +74,61 @@ train:
     max_iter: 1000
     solver: "liblinear"
 
-# Параметры оценки модели
+# Model evaluation parameters
 evaluate:
+  target_column: "arxiv_categories"
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+
+  # Visualization parameters
+  plot_style: "seaborn"
   dpi: 300
-  figure_size:
-  - 10
-  - 8
+  figure_size: [12, 8]
+
+  # Report generation
   include_classification_report: true
   include_confusion_matrix: true
   include_feature_importance: true
-  metrics:
-  - accuracy
-  - precision
-  - recall
-  - f1_score
-  - roc_auc
-  plot_style: seaborn
-  target_column: journal_category
   top_features_to_show: 20
-feature_engineering:
-  categorical_columns:
-  - journal_category
-  - abstract_category
-  - citation_category
-  lowercase: true
-  max_df: 0.95
-  min_df: 2
-  ngram_range:
-  - 1
-  - 2
-  numerical_columns:
-  - impact_score
-  - cited_by
-  - year
-  - title_length
-  - abstract_length
-  - author_count
-  - num_keywords
-  stop_words: english
-  text_columns:
-  - title_cleaned
-  - abstract_cleaned
-  - keywords
-  tfidf_max_features: 5000
-  use_tfidf: true
+
+# MLflow configuration
 mlflow:
-  experiment_name: research_publications_classification
-  log_artifacts:
-  - models/
-  - reports/
-  - data/processed/processing_metadata.yaml
-  run_name: baseline_model
+  experiment_name: "arxiv_publications_classification"
+  run_name: "baseline_model"
+  tracking_uri: "file:./mlruns"
+
+  # Tagging
   tags:
-    data_version: v1.0
-    domain: digital_pathology
-    model_type: classification
-    project: research_agents_hub
-  tracking_uri: file:./mlruns
+    project: "research_agents_hub"
+    data_source: "arxiv"
+    model_type: "classification"
+    data_version: "v2.0"
+    pipeline_version: "automated"
+
+  # Artifacts to log
+  log_artifacts:
+    - "models/"
+    - "reports/"
+    - "data/processed/"
+
+# Reproducibility settings
 reproducibility:
   deterministic: true
   seed: 42
+  python_hash_seed: 42
+
+# Resource management
 resources:
-  memory_limit: 4G
+  memory_limit: "4G"
   n_jobs: -1
-train:
-  algorithm: RandomForestClassifier
-  cross_validation:
-    folds: 3
-    scoring: accuracy
-  logistic_regression:
-    C: 1.0
-    max_iter: 1000
-    penalty: l2
-    solver: liblinear
-  random_forest:
-    bootstrap: true
-    max_depth: 10
-    max_features: sqrt
-    min_samples_leaf: 2
-    min_samples_split: 5
-    n_estimators: 100
-    oob_score: true
-  random_state: 42
-  svm:
-    C: 1.0
-    gamma: scale
-    kernel: rbf
-    probability: true
-  test_size: 0.2
+  verbose: 1
+
+# Data versioning
+versioning:
+  auto_stage: true
+  data_remote: "local_storage"
+  model_registry: "mlflow"

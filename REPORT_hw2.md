@@ -24,46 +24,47 @@
 # Инициализация DVC в проекте
 dvc init
 
-# Настройка Google Drive remote storage для воспроизводимости
-dvc remote add -d gdrive_storage gdrive://133mVXq1xIxJMEDuN_7haphoHf8ZqD9g0
+# Настройка локального remote storage для воспроизводимости
+dvc remote add -d local_storage ../dvc_storage
 
 # Включение автоматического добавления .dvc файлов в Git
 dvc config core.autostage true
 ```
 
 ### Подготовка данных
-Создан датасет из 51 публикации по цифровой патологии:
+Создан автоматический pipeline для получения данных ArXiv:
 ```bash
-# Создание raw данных
-echo "title,authors,journal,year,doi,abstract,keywords,cited_by,methodology,dataset_used" > data/raw/publications.csv
-# ... добавлены 51 запись научных публикаций
+# Автоматическое получение данных ArXiv
+python scripts/fetch_arxiv_data.py --query "cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM" --max-results 100
+
+# Результат: созданы файлы
+# data/raw/arxiv_publications.csv
+# data/raw/arxiv_metadata.yaml
 ```
 
 ### Версионирование данных с помощью DVC
 ```bash
 # Добавление исходных данных в DVC
-dvc add data/raw/publications.csv
-dvc add data/raw/data_metadata.yaml
+dvc add data/raw/arxiv_publications.csv
+dvc add data/raw/arxiv_metadata.yaml
 
 # Результат: созданы .dvc файлы для отслеживания
-# data/raw/publications.csv.dvc
-# data/raw/data_metadata.yaml.dvc
+# data/raw/arxiv_publications.csv.dvc
+# data/raw/arxiv_metadata.yaml.dvc
 ```
 
 ### Предобработка данных
 Создан скрипт `scripts/preprocess_data.py` со следующими функциями:
 - Очистка и нормализация текстовых данных
 - Извлечение дополнительных признаков (количество авторов, длина текста)
-- Категоризация журналов по типам
-- Вычисление impact score на основе цитирований
+- Категоризация по ArXiv категориям
+- Обработка метаданных публикаций
 
 ```bash
 # Запуск предобработки
-python scripts/preprocess_data.py
+python scripts/preprocess_data.py --input data/raw/arxiv_publications.csv --output data/processed/publications_processed.csv
 
-# Результат:
-# 2025-11-30 16:45:51,617 - INFO - Final dataset shape: (51, 21)
-# 2025-11-30 16:45:51,618 - INFO - Data preprocessing completed successfully!
+# Результат: обработанный датасет с извлеченными признаками
 ```
 
 ### Версионирование обработанных данных
@@ -83,14 +84,14 @@ dvc status
 В файле `params.yaml` настроены параметры эксперимента:
 ```yaml
 mlflow:
-  experiment_name: "research_publications_classification"
+  experiment_name: "arxiv_publications_classification"
   run_name: "baseline_model"
   tracking_uri: "file:./mlruns"
   tags:
     project: "research_agents_hub"
-    domain: "digital_pathology" 
+    data_source: "arxiv"
     model_type: "classification"
-    data_version: "v1.0"
+    data_version: "v2.0"
 ```
 
 ### Запуск MLflow сервера
@@ -103,7 +104,6 @@ curl http://127.0.0.1:3000/
 # <!doctype html><html lang="en"><head><meta charset="utf-8"/>...
 ```
 
-
 ### Обучение модели с MLflow логированием
 Создан скрипт `scripts/train_model.py` с полной интеграцией MLflow:
 
@@ -114,11 +114,8 @@ python scripts/train_model.py \
     --model-output models/classifier.pkl \
     --metrics metrics.json
 
-# Результаты обучения:
-# 2025-11-30 16:46:13,132 - INFO - Cross-validation scores: [0.71428571 0.84615385 0.76923077]
-# 2025-11-30 16:46:13,132 - INFO - Mean CV score: 0.7766 (+/- 0.1082)
-# Successfully registered model 'research_publications_classification_model'.
-# Created version '1' of model 'research_publications_classification_model'.
+# Результаты обучения логируются в MLflow автоматически
+# Модель регистрируется в Model Registry
 ```
 
 ### Версионирование обученной модели
@@ -132,32 +129,29 @@ dvc add models/classifier.pkl
 ## Результаты работы системы версионирования
 
 ### MLflow Model Registry
-- **Зарегистрированная модель:** research_publications_classification_model
-- **Версия:** 1
-- **MLflow Run ID:** 3e0b59a18e4d4d2386a2e214affc35bd
+- **Зарегистрированная модель:** arxiv_publications_classification_model
+- **Источник данных:** ArXiv API
+- **Автоматическое логирование:** параметры, метрики, артефакты
 
-### Логированные параметры (15 параметров):
+### Логированные параметры:
 - algorithm: RandomForestClassifier
 - n_estimators: 100
 - max_depth: 10
 - test_size: 0.2
 - tfidf_max_features: 5000
 - random_state: 42
-- и др.
 
 ### Логированные метрики:
-- cv_mean: 0.7766
-- test_accuracy: 0.9091
-- test_precision: 0.8333
-- test_recall: 0.9091  
-- test_f1_score: 0.8678
+- Cross-validation accuracy
+- Test accuracy, precision, recall, F1-score
+- Feature importance
 
 ### Структура версионированных данных и моделей
 ```
 data/
 ├── raw/
-│   ├── publications.csv.dvc          # DVC отслеживает исходные данные
-│   └── data_metadata.yaml.dvc        # DVC отслеживает метаданные
+│   ├── arxiv_publications.csv.dvc    # DVC отслеживает ArXiv данные
+│   └── arxiv_metadata.yaml.dvc       # DVC отслеживает метаданные
 └── processed/
     ├── publications_processed.csv.dvc # DVC отслеживает обработанные данные
     └── processing_metadata.yaml.dvc   # DVC отслеживает метаданные обработки
@@ -167,12 +161,12 @@ models/
 └── classifier_metadata.yaml          # Метаданные модели
 
 mlruns/                               # MLflow tracking данные
-├── 0/                                # Эксперименты
-├── 513200582704195422/              # ID эксперимента
-│   └── 3e0b59a18e4d4d2386a2e214affc35bd/ # Run с моделью и метриками
-└── models/                          # Model Registry
-    └── research_publications_classification_model/
+└── experiments/                      # Эксперименты и модели
+
+../dvc_storage/                       # Локальное хранилище DVC
+└── files/                           # Версионированные файлы
 ```
+
 ![MLflow](pics/mlflow1.png)
 ![MLflow](pics/mlflow2.png)
 ![MLflow](pics/mlflow3.png)
@@ -185,7 +179,7 @@ mlruns/                               # MLflow tracking данные
 # Базовая среда с Python и зависимостями
 FROM python:3.11-slim as base
 # Установка DVC, MLflow и ML зависимостей
-RUN pip install dvc[s3]==3.64.0 mlflow==2.22.2
+RUN pip install dvc==3.64.0 mlflow==2.22.2
 ```
 
 ### Docker Compose для оркестрации
@@ -208,11 +202,15 @@ services:
 poetry install
 
 # Получение данных из DVC remote
-poetry run dvc pull
+dvc pull
 
-# Воспроизведение результатов
-poetry run python scripts/preprocess_data.py
-poetry run python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/classifier.pkl --metrics metrics.json
+# Автоматический запуск pipeline
+dvc repro
+
+# Или ручной запуск этапов
+python scripts/fetch_arxiv_data.py --max-results 100
+python scripts/preprocess_data.py --input data/raw/arxiv_publications.csv
+python scripts/train_model.py --input data/processed/publications_processed.csv
 ```
 
 ### Docker запуск
@@ -220,7 +218,7 @@ poetry run python scripts/train_model.py --input data/processed/publications_pro
 # Сборка и запуск через Docker Compose
 docker-compose up -d mlflow-server
 docker-compose run --rm ml-app train
-
+dvc status
 # Результат: модель обучена, метрики в MLflow UI
 ```
 
@@ -230,85 +228,109 @@ docker-compose run --rm ml-app train
 dvc status
 # Data and pipelines are up to date.
 
+# Проверка конфигурации DVC
+dvc remote list
+# local_storage	../dvc_storage (default)
 ```
+
 ![DVC](pics/dvc.png)
 
 ## Инструкция по воспроизводимости 
+
+### Автоматический способ через DVC
 ```bash
 # 1. Клонирование репозитория
 git clone <repository_url>
 cd research_agets_hub
 
-# 2. Запуск MLflow сервера
-docker-compose up -d mlflow-server
-
-# 3. Проверка доступности MLflow UI (должно открыться в браузере)
-open http://localhost:3000
-
-# 4. Запуск полного обучения модели
-docker-compose run --rm ml-app train
-```
-
-### Пошаговая инструкци
-### Шаг 1: Сборка и запуск сервисов
-```bash
-# Сборка базового образа
-docker-compose build mlflow-server
-
-# Запуск MLflow сервера в фоне
-docker-compose up -d mlflow-server
-
-# Проверка статуса сервиса
-docker-compose ps
-```
-
-**Ожидаемый результат**: 
-```
-NAME            COMMAND           SERVICE          STATUS    PORTS
-mlflow-server   "mlflow-server"   mlflow-server    running   0.0.0.0:3000->3000/tcp
-```
-
-#### Шаг 2: Верификация MLflow UI
-
-```bash
-# Проверка доступности API
-curl -f http://localhost:3000/api/2.0/mlflow/experiments/search
-
-# Проверка веб-интерфейса (должен вернуть HTML)
-curl -s http://localhost:3000 | head -n 5
-```
-
-**Ожидаемый результат**: JSON ответ для API и HTML для веб-интерфейса
-
-
-
-### Способ через Poetry
-
-Если Docker недоступен:
-
-```bash
-# 1. Установка Poetry
-curl -sSL https://install.python-poetry.org | python3 -
-
 # 2. Установка зависимостей
 poetry install
 
-# 3. Проверка конфигурации DVC
-poetry run dvc remote list
-
-# 4. Запуск MLflow сервера (в фоне)
+# 3. Запуск MLflow сервера
 nohup poetry run mlflow server --host 127.0.0.1 --port 3000 --backend-store-uri file:./mlruns > mlflow.log 2>&1 &
 
+# 4. Запуск полного pipeline
+poetry run dvc repro
+```
 
+### Пошаговая инструкция
+
+#### Шаг 1: Подготовка окружения
+```bash
+# Установка Poetry (если не установлен)
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Установка зависимостей
+poetry install
+
+# Проверка конфигурации DVC
+poetry run dvc remote list
+```
+
+#### Шаг 2: Запуск сервисов
+```bash
+# Запуск MLflow сервера в фоне
+nohup poetry run mlflow server --host 127.0.0.1 --port 3000 --backend-store-uri file:./mlruns > mlflow.log 2>&1 &
+
+# Проверка статуса сервиса
+curl -f http://localhost:3000/api/2.0/mlflow/experiments/search
+```
+
+#### Шаг 3: Выполнение pipeline
+```bash
+# Автоматический запуск всех этапов
+poetry run dvc repro
+
+# Или поэтапно:
+# 1. Получение данных
+poetry run dvc repro fetch_data
+
+# 2. Предобработка
+poetry run dvc repro preprocess
+
+# 3. Обучение модели
+poetry run dvc repro train
+```
+
+**Ожидаемый результат**: 
+- Данные получены из ArXiv API и сохранены в `data/raw/`
+- Данные обработаны и сохранены в `data/processed/`
+- Модель обучена и зарегистрирована в MLflow
+- Все артефакты версионированы в DVC
+
+### Способ через Docker
+
+![MLFlow_docker_compose](pics/docker_build.png)
+
+```bash
+# 1. Сборка образов
+docker-compose build
+
+# 2. Запуск сервисов
+docker-compose up -d mlflow-server
+
+# 3. Выполнение обучения
+docker-compose run --rm ml-app train
+
+# 4. Проверка результатов
+open http://localhost:3000
+```
+![MLFlow_docker_compose](pics/docker_mlflow_compose.png)
 ## Git workflow для версионирования
 
 ### Структура веток
-- **main** — стабильная версия с базовой настройкой
+- **main** — стабильная версия с автоматизированным pipeline
 - **feature/setup-workspace** — настройка рабочего окружения
-- **feature/setup-dvc-mlflow** — текущая ветка с системой версионирования
+- **feature/automated-pipeline** — текущая ветка с автоматизированной системой
 
 ### Коммиты версионирования
 ```bash
-git add .dvc/config data/raw/*.dvc data/processed/*.dvc models/*.dvc
-git commit -m "feat: ..."
+# Добавление DVC файлов и конфигурации
+git add .dvc/config data/raw/*.dvc data/processed/*.dvc models/*.dvc dvc.yaml params.yaml
+
+# Коммит изменений
+git commit -m "feat: setup automated ArXiv data pipeline with DVC and MLflow"
+
+# Синхронизация данных в DVC
+dvc push
 ```

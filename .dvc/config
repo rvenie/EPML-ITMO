@@ -1,5 +1,5 @@
 [core]
-    remote = gdrive_storage
     autostage = true
-['remote "gdrive_storage"']
-    url = gdrive://133mVXq1xIxJMEDuN_7haphoHf8ZqD9g0
+    remote = local_storage
+['remote "local_storage"']
+    url = ./.dvc_storage
