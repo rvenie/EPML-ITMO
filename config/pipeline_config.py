@@ -4,7 +4,7 @@ Pydantic модели для валидации конфигураций ML па
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
@@ -33,7 +33,7 @@ class FeatureEngineeringConfig(BaseModel):
 
     # TF-IDF параметры
     tfidf_max_features: int = Field(default=5000, ge=100, le=50000)
-    ngram_range: List[int] = Field(default=[1, 2], min_items=2, max_items=2)
+    ngram_range: list[int] = Field(default=[1, 2], min_items=2, max_items=2)
     min_df: int = Field(default=2, ge=1)
     max_df: float = Field(default=0.95, gt=0, le=1)
     use_tfidf: bool = Field(default=True)
@@ -41,9 +41,9 @@ class FeatureEngineeringConfig(BaseModel):
     stop_words: str = Field(default="english")
 
     # Колонки для обработки
-    text_columns: List[str] = Field(..., description="Текстовые колонки для обработки")
-    categorical_columns: List[str] = Field(..., description="Категориальные колонки")
-    numerical_columns: List[str] = Field(..., description="Числовые колонки")
+    text_columns: list[str] = Field(..., description="Текстовые колонки для обработки")
+    categorical_columns: list[str] = Field(..., description="Категориальные колонки")
+    numerical_columns: list[str] = Field(..., description="Числовые колонки")
 
     @validator("ngram_range")
     def validate_ngram_range(cls, v):
@@ -59,7 +59,7 @@ class RandomForestConfig(BaseModel):
     """Конфигурация для Random Forest"""
 
     n_estimators: int = Field(default=100, ge=1, le=1000)
-    max_depth: Optional[int] = Field(default=10, ge=1)
+    max_depth: int | None = Field(default=10, ge=1)
     min_samples_split: int = Field(default=5, ge=2)
     min_samples_leaf: int = Field(default=2, ge=1)
     max_features: str = Field(default="sqrt")
@@ -85,7 +85,7 @@ class TrainingConfig(BaseModel):
     random_state: int = Field(default=42)
 
     # Параметры кросс-валидации
-    cross_validation: Dict[str, Any] = Field(default_factory=dict)
+    cross_validation: dict[str, Any] = Field(default_factory=dict)
 
     # Параметры алгоритмов
     random_forest: RandomForestConfig = Field(default_factory=RandomForestConfig)
@@ -103,16 +103,16 @@ class MLflowConfig(BaseModel):
     """Конфигурация для MLflow"""
 
     experiment_name: str = Field(..., description="Название эксперимента")
-    run_name: Optional[str] = Field(default=None, description="Название запуска")
+    run_name: str | None = Field(default=None, description="Название запуска")
     tracking_uri: str = Field(
         default="file:./mlruns", description="URI для tracking server"
     )
 
     # Теги эксперимента
-    tags: Dict[str, str] = Field(default_factory=dict)
+    tags: dict[str, str] = Field(default_factory=dict)
 
     # Артефакты для логирования
-    log_artifacts: List[str] = Field(default_factory=list)
+    log_artifacts: list[str] = Field(default_factory=list)
 
     @validator("tracking_uri")
     def validate_tracking_uri(cls, v):
@@ -128,12 +128,12 @@ class EvaluationConfig(BaseModel):
     """Конфигурация для оценки модели"""
 
     target_column: str = Field(..., description="Целевая колонка")
-    metrics: List[str] = Field(..., description="Метрики для оценки")
+    metrics: list[str] = Field(..., description="Метрики для оценки")
 
     # Параметры визуализации
     plot_style: str = Field(default="seaborn")
     dpi: int = Field(default=300, ge=72, le=600)
-    figure_size: List[int] = Field(default=[12, 8], min_items=2, max_items=2)
+    figure_size: list[int] = Field(default=[12, 8], min_items=2, max_items=2)
 
     # Параметры отчета
     include_classification_report: bool = Field(default=True)
@@ -163,9 +163,9 @@ class PipelineConfig(BaseModel):
     mlflow: MLflowConfig
 
     # Дополнительные параметры
-    reproducibility: Dict[str, Any] = Field(default_factory=dict)
-    resources: Dict[str, Any] = Field(default_factory=dict)
-    versioning: Dict[str, Any] = Field(default_factory=dict)
+    reproducibility: dict[str, Any] = Field(default_factory=dict)
+    resources: dict[str, Any] = Field(default_factory=dict)
+    versioning: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
         """Настройки Pydantic модели"""
@@ -178,7 +178,7 @@ class PipelineConfig(BaseModel):
         use_enum_values = True
 
 
-def load_config(config_path: Union[str, Path]) -> PipelineConfig:
+def load_config(config_path: str | Path) -> PipelineConfig:
     """
     Загрузка и валидация конфигурации из YAML файла
 
@@ -193,13 +193,13 @@ def load_config(config_path: Union[str, Path]) -> PipelineConfig:
     """
     import yaml
 
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(config_path, encoding="utf-8") as f:
         config_data = yaml.safe_load(f)
 
     return PipelineConfig(**config_data)
 
 
-def validate_config_file(config_path: Union[str, Path]) -> bool:
+def validate_config_file(config_path: str | Path) -> bool:
     """
     Проверка корректности файла конфигурации
 

@@ -4,7 +4,6 @@
 Генерирует конфигурации без сложных зависимостей.
 """
 
-import os
 from pathlib import Path
 
 import yaml
@@ -81,7 +80,7 @@ DATA_SIZE_CONFIGS = {
 def load_base_config(config_path="params.yaml"):
     """Загрузка базовой конфигурации"""
     try:
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             return yaml.safe_load(f)
     except FileNotFoundError:
         print(f"⚠️ Файл {config_path} не найден, используется минимальная конфигурация")

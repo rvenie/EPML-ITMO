@@ -7,7 +7,7 @@ import logging
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -58,7 +58,7 @@ class PipelineMonitor:
         if description:
             self.logger.info(f"📄 Описание: {description}")
 
-    def complete_stage(self, stage_name: str, metrics: Optional[Dict[str, Any]] = None):
+    def complete_stage(self, stage_name: str, metrics: dict[str, Any] | None = None):
         """Успешное завершение этапа"""
         if stage_name not in self.stages_status:
             self.logger.warning(f"⚠️ Этап {stage_name} не был запущен")
@@ -176,11 +176,11 @@ class PipelineMonitor:
         with open(notification_file, "a", encoding="utf-8") as f:
             f.write(f"{datetime.now().isoformat()} - {status} - {duration:.2f}s\n")
 
-    def get_stage_status(self, stage_name: str) -> Optional[Dict[str, Any]]:
+    def get_stage_status(self, stage_name: str) -> dict[str, Any] | None:
         """Получение статуса конкретного этапа"""
         return self.stages_status.get(stage_name)
 
-    def get_pipeline_summary(self) -> Dict[str, Any]:
+    def get_pipeline_summary(self) -> dict[str, Any]:
         """Получение сводки по пайплайну"""
         if not self.stages_status:
             return {"status": "not_started"}

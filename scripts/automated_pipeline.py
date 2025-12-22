@@ -16,7 +16,6 @@ import logging
 import multiprocessing as mp
 import subprocess
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Dict, List
 
 from config.monitoring import MonitoredStage, pipeline_monitor
 from config.pipeline_config import load_config, validate_config_file
@@ -31,7 +30,7 @@ def setup_logging():
     )
 
 
-def run_dvc_stage(stage_name: str) -> Dict[str, any]:
+def run_dvc_stage(stage_name: str) -> dict[str, any]:
     """
     Запуск одного этапа DVC пайплайна
 
