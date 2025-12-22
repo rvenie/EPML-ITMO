@@ -35,8 +35,8 @@ stages:
       size: 174435
     - path: scripts/preprocess_data.py
       hash: md5
-      md5: dca6dc990b1671e6fdfadfcea147d4cd
-      size: 10028
+      md5: 227d7f1c83cd38268b1023da27f21e15
+      size: 10035
     params:
       params.yaml:
         feature_engineering.categorical_columns:
@@ -56,9 +56,53 @@ stages:
     outs:
     - path: data/processed/processing_metadata.yaml
       hash: md5
-      md5: d7d2aafba07ffe08933ebe9c8cd74850
+      md5: f13dd619e661e4455ee483d398e3f176
       size: 706
     - path: data/processed/publications_processed.csv
       hash: md5
       md5: 667e2147a0af914b2eedbcd49dd0e0c6
       size: 320745
+  train:
+    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv
+      --model-output models/classifier.pkl --metrics metrics.json
+    deps:
+    - path: data/processed/processing_metadata.yaml
+      hash: md5
+      md5: f13dd619e661e4455ee483d398e3f176
+      size: 706
+    - path: data/processed/publications_processed.csv
+      hash: md5
+      md5: 667e2147a0af914b2eedbcd49dd0e0c6
+      size: 320745
+    - path: scripts/train_model.py
+      hash: md5
+      md5: 1e1280fa27f0f2e6d042132927d77787
+      size: 14779
+    params:
+      params.yaml:
+        mlflow.experiment_name: arxiv_publications_classification
+        mlflow.tracking_uri: file:./mlruns
+        train.algorithm: RandomForestClassifier
+        train.random_forest:
+          n_estimators: 100
+          max_depth: 10
+          min_samples_split: 5
+          min_samples_leaf: 2
+          max_features: sqrt
+          bootstrap: true
+          oob_score: true
+        train.random_state: 42
+        train.test_size: 0.2
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 07a34a69a501070c53d035e777818cae
+      size: 519
+    - path: models/classifier.pkl
+      hash: md5
+      md5: c03b2c33cef60525617d8cdd6431e8df
+      size: 1176825
+    - path: models/classifier_metadata.yaml
+      hash: md5
+      md5: f5aa27515d75ab75af21a19219dc0d35
+      size: 1299

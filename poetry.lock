@@ -5282,7 +5282,7 @@ version = "6.0.12.20250915"
 description = "Typing stubs for PyYAML"
 optional = false
 python-versions = ">=3.9"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "types_pyyaml-6.0.12.20250915-py3-none-any.whl", hash = "sha256:e7d4d9e064e89a3b3cae120b4990cd370874d2bf12fa5f46c97018dd5d3c9ab6"},
     {file = "types_pyyaml-6.0.12.20250915.tar.gz", hash = "sha256:0f8b54a528c303f0e6f7165687dd33fafa81c807fcac23f632b63aa624ced1d3"},
@@ -5659,9 +5659,9 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more_it
 type = ["pytest-mypy"]
 
 [extras]
-dev = ["bandit", "mypy", "pre-commit", "pytest", "pytest-cov", "ruff"]
+dev = ["bandit", "mypy", "pre-commit", "pytest", "pytest-cov", "ruff", "types-PyYAML"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "446bf75389aba25a3171161dbb79b867329acb616991892e94fabbe92d21d413"
+content-hash = "55198f4991c8a9c926e90a5dba03c5f654e965c5b490f8783b7732d1afc31b7a"

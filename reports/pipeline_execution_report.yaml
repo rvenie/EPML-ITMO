@@ -1,0 +1,26 @@
+pipeline_execution:
+  end_time: '2025-12-22T22:02:02.267720'
+  stages:
+    fetch_data:
+      description: Выполнение этапа fetch_data
+      duration: 0.427548885345459
+      end_time: 1766430121.648227
+      metrics: {}
+      start_time: 1766430121.220674
+      status: completed
+    preprocess:
+      description: Выполнение этапа preprocess
+      duration: 0.3073289394378662
+      end_time: 1766430121.9558132
+      metrics: {}
+      start_time: 1766430121.648483
+      status: completed
+    train:
+      description: Выполнение этапа train
+      duration: 0.3114449977874756
+      end_time: 1766430122.267453
+      metrics: {}
+      start_time: 1766430121.956007
+      status: completed
+  start_time: '2025-12-22T22:02:01.220440'
+  total_duration: 1.0472807884216309

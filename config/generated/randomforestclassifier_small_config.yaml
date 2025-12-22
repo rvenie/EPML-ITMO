@@ -1,0 +1,104 @@
+_metadata:
+  algorithm: RandomForestClassifier
+  data_size: small
+  generated_by: simple_composer.py
+data:
+  max_results: 50
+  output_format: csv
+  query: cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM OR cat:cs.LG
+  source: arxiv
+evaluate:
+  dpi: 300
+  figure_size:
+  - 12
+  - 8
+  include_classification_report: true
+  include_confusion_matrix: true
+  include_feature_importance: true
+  metrics:
+  - accuracy
+  - precision
+  - recall
+  - f1_score
+  - roc_auc
+  plot_style: seaborn
+  target_column: arxiv_categories
+  top_features_to_show: 20
+feature_engineering:
+  categorical_columns:
+  - journal_category
+  - year_category
+  - author_count_category
+  lowercase: true
+  max_df: 0.95
+  min_df: 2
+  ngram_range:
+  - 1
+  - 2
+  numerical_columns:
+  - year
+  - title_length
+  - abstract_length
+  - author_count
+  - num_keywords
+  stop_words: english
+  text_columns:
+  - title
+  - abstract
+  - keywords
+  tfidf_max_features: 1000
+  use_tfidf: true
+mlflow:
+  experiment_name: random_forest_experiment
+  log_artifacts:
+  - models/
+  - reports/
+  - data/processed/
+  run_name: baseline_model
+  tags:
+    algorithm: RandomForest
+    complexity: medium
+    data_source: arxiv
+    data_version: v2.0
+    model_type: classification
+    pipeline_version: automated
+    project: research_agents_hub
+  tracking_uri: file:./mlruns
+reproducibility:
+  deterministic: true
+  python_hash_seed: 42
+  seed: 42
+resources:
+  memory_limit: 4G
+  n_jobs: -1
+  verbose: 1
+train:
+  algorithm: RandomForestClassifier
+  cross_validation:
+    folds: 5
+    scoring: accuracy
+    stratify: true
+  logistic_regression:
+    C: 1.0
+    max_iter: 1000
+    penalty: l2
+    solver: liblinear
+  random_forest:
+    bootstrap: true
+    max_depth: 10
+    max_features: sqrt
+    min_samples_leaf: 2
+    min_samples_split: 5
+    n_estimators: 100
+    oob_score: true
+  random_state: 42
+  svm:
+    C: 1.0
+    gamma: scale
+    kernel: rbf
+    probability: true
+  test_size: 0.2
+versioning:
+  auto_stage: true
+  data_remote: local_storage
+  model_registry: mlflow

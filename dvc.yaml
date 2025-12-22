@@ -4,53 +4,75 @@
 stages:
   # Stage 1: Fetch data from ArXiv API
   fetch_data:
-    cmd: python scripts/fetch_arxiv_data.py --query "${data.query}" --max-results
+    cmd:
+      python scripts/fetch_arxiv_data.py --query "${data.query}" --max-results
       ${data.max_results} --output-dir data/raw
     deps:
-    - scripts/fetch_arxiv_data.py
+      - scripts/fetch_arxiv_data.py
     params:
-    - data.query
-    - data.max_results
+      - data.query
+      - data.max_results
     outs:
-    - data/raw/arxiv_publications.csv
-    - data/raw/arxiv_metadata.yaml
+      - data/raw/arxiv_publications.csv
+      - data/raw/arxiv_metadata.yaml
     desc: Fetch research papers from ArXiv API with specified query and parameters
 
   # Stage 2: Preprocess the raw data
   preprocess:
-    cmd: python scripts/preprocess_data.py --input data/raw/arxiv_publications.csv
+    cmd:
+      python scripts/preprocess_data.py --input data/raw/arxiv_publications.csv
       --output data/processed/publications_processed.csv
     deps:
-    - scripts/preprocess_data.py
-    - data/raw/arxiv_publications.csv
-    - data/raw/arxiv_metadata.yaml
+      - scripts/preprocess_data.py
+      - data/raw/arxiv_publications.csv
+      - data/raw/arxiv_metadata.yaml
     params:
-    - feature_engineering.text_columns
-    - feature_engineering.categorical_columns
-    - feature_engineering.numerical_columns
+      - feature_engineering.text_columns
+      - feature_engineering.categorical_columns
+      - feature_engineering.numerical_columns
     outs:
-    - data/processed/publications_processed.csv
-    - data/processed/processing_metadata.yaml
+      - data/processed/publications_processed.csv
+      - data/processed/processing_metadata.yaml
     desc: Clean and preprocess raw ArXiv data for ML training
 
   # Stage 3: Train the machine learning model
+  train:
+    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/classifier.pkl --metrics metrics.json
+    deps:
+      - scripts/train_model.py
+      - data/processed/publications_processed.csv
+      - data/processed/processing_metadata.yaml
+    params:
+      - train.algorithm
+      - train.random_forest
+      - train.test_size
+      - train.random_state
+      - mlflow.experiment_name
+      - mlflow.tracking_uri
+    outs:
+      - models/classifier.pkl
+      - models/classifier_metadata.yaml
+    metrics:
+      - metrics.json
+    desc: Train machine learning model and log results to MLflow
+
 plots:
-- reports/confusion_matrix.png:
-    title: Model Confusion Matrix
-    template: confusion
+  - reports/confusion_matrix.png:
+      title: Model Confusion Matrix
+      template: confusion
 
-- reports/feature_importance.png:
-    title: Feature Importance Analysis
-    template: bar_horizontal
+  - reports/feature_importance.png:
+      title: Feature Importance Analysis
+      template: bar_horizontal
 
-- metrics.json:
-    title: Training Metrics
-    x: epoch
-    y:
-    - accuracy
-    - precision
-    - recall
-    - f1_score
+  - metrics.json:
+      title: Training Metrics
+      x: epoch
+      y:
+        - accuracy
+        - precision
+        - recall
+        - f1_score
 
 # Artifacts configuration
 artifacts:
@@ -59,15 +81,15 @@ artifacts:
     type: model
     desc: Trained classification model for research publication analysis
     labels:
-    - classification
-    - research-papers
-    - arxiv
+      - classification
+      - research-papers
+      - arxiv
 
   processed_data:
     path: data/processed/publications_processed.csv
     type: dataset
     desc: Preprocessed ArXiv publications dataset
     labels:
-    - processed
-    - publications
-    - features
+      - processed
+      - publications
+      - features
