@@ -4,6 +4,10 @@
 !/data/*.dvc
 !/data/**/*.dvc
 
+clearml/*
+
+experiment_report_*.json
+research_classifier_*.pkl
 # Mac OS-specific storage files
 .DS_Store
 
@@ -194,3 +198,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 /metrics.json
+
+pipeline_scheduler_state.json
