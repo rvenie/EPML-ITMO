@@ -49,6 +49,10 @@ Issues = "https://github.com/your-org/research-agents-hub/issues"
 
 # Poetry-specific configuration
 [tool.poetry]
+name = "research-agents-hub"
+version = "0.1.0"
+description = "ML pipeline for ArXiv research publication analysis with DVC and MLflow"
+authors = ["Research Team <research@example.com>"]
 packages = [{include = "researchhub"}]
 
 [tool.poetry.group.dev.dependencies]
