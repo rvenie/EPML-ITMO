@@ -1,0 +1,66 @@
+algorithm: SVM
+data_info:
+  features: 2080
+  target_classes: 44
+  test_samples: 20
+  training_samples: 80
+data_version: v2.0
+feature_engineering:
+  categorical_columns:
+  - journal_category
+  - year_category
+  - author_count_category
+  lowercase: true
+  max_df: 0.95
+  min_df: 2
+  ngram_range:
+  - 1
+  - 2
+  numerical_columns:
+  - year
+  - title_length
+  - abstract_length
+  - author_count
+  - num_keywords
+  stop_words: english
+  text_columns:
+  - title
+  - abstract
+  - keywords
+  tfidf_max_features: 3000
+  use_tfidf: true
+hyperparameters:
+  algorithm: SVM
+  cross_validation:
+    folds: 5
+    scoring: accuracy
+    stratify: true
+  logistic_regression:
+    C: 1.0
+    max_iter: 1000
+    penalty: l2
+    solver: liblinear
+  random_forest:
+    bootstrap: true
+    max_depth: 10
+    max_features: sqrt
+    min_samples_leaf: 2
+    min_samples_split: 5
+    n_estimators: 100
+    oob_score: true
+  random_state: 42
+  svm:
+    C: 1.0
+    degree: 3
+    gamma: scale
+    kernel: poly
+    probability: true
+  test_size: 0.2
+mlflow_run_id: 5d527d40fabe47d0ab9367739fcb020e
+model_name: arxiv_publications_classification_model
+model_version: 1.0.0
+performance:
+  cv_accuracy: 0.35
+  test_accuracy: 0.25
+  test_f1_score: 0.1
+training_date: '2025-12-21T23:48:06.961145'

@@ -1,0 +1,128 @@
+# MkDocs Configuration for ResearchHub
+# Documentation: https://www.mkdocs.org/
+
+site_name: ResearchHub Documentation
+site_description: ML pipeline для анализа научных публикаций ArXiv с DVC и MLflow
+site_author: Research Team
+site_url: https://rvenie.github.io/research_agets_hub/
+
+# Repository
+repo_name: research_agets_hub
+repo_url: https://github.com/rvenie/EPML-ITMO
+edit_uri: edit/main/docs/
+
+# Theme configuration
+theme:
+  name: material
+  language: ru
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Переключить на тёмную тему
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Переключить на светлую тему
+  
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.instant
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+  
+  icon:
+    repo: fontawesome/brands/github
+
+# Plugins
+plugins:
+  - search:
+      lang: 
+        - ru
+        - en
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            docstring_style: google
+
+# Extensions
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 3
+
+# Navigation
+nav:
+  - Главная: index.md
+  - Начало работы:
+    - Быстрый старт: getting-started/quickstart.md
+    - Установка: getting-started/installation.md
+    - Конфигурация: getting-started/configuration.md
+  - Руководство пользователя:
+    - Обзор: user-guide/overview.md
+    - Работа с данными: user-guide/data.md
+    - Обучение моделей: user-guide/training.md
+    - Эксперименты: user-guide/experiments.md
+  - API Reference:
+    - Обзор API: api/index.md
+    - MLflow Utils: api/mlflow-utils.md
+    - Декораторы: api/decorators.md
+    - Features: api/features.md
+  - Развёртывание:
+    - Docker: deployment/docker.md
+    - DVC Pipeline: deployment/dvc.md
+    - MLflow Server: deployment/mlflow.md
+    - ClearML: deployment/clearml.md
+  - Отчёты:
+    - Эксперименты: reports/experiments.md
+    - Метрики: reports/metrics.md
+
+# Extra CSS/JS
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/rvenie/EPML-ITMO

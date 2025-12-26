@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/rvenie/Yandex.Disk.localized/workspace/learn/EnginPractML/research_agets_hub/mlruns/317899650776771811/1e95e77f0997446882722500c15423d1/artifacts
+end_time: 1766349846678
+entry_point_name: ''
+experiment_id: '317899650776771811'
+lifecycle_stage: active
+run_id: 1e95e77f0997446882722500c15423d1
+run_name: exp_15_LR_lbfgs
+run_uuid: 1e95e77f0997446882722500c15423d1
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1766349846655
+status: 4
+tags: []
+user_id: rvenie

@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1766429777145
+current_stage: None
+description: null
+last_updated_timestamp: 1766429777145
+name: arxiv_publications_classification_model
+run_id: 8e0689e339d24988862b36062f7a4e63
+run_link: null
+source: file:///Users/rvenie/Yandex.Disk.localized/workspace/learn/EnginPractML/research_agets_hub/mlruns/317899650776771811/8e0689e339d24988862b36062f7a4e63/artifacts/model
+status: READY
+status_message: null
+storage_location: file:///Users/rvenie/Yandex.Disk.localized/workspace/learn/EnginPractML/research_agets_hub/mlruns/317899650776771811/8e0689e339d24988862b36062f7a4e63/artifacts/model
+user_id: null
+version: 18

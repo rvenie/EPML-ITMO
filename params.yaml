@@ -1,0 +1,134 @@
+# ML Pipeline Parameters
+# Configuration file for research publications analysis pipeline
+
+# Data fetching parameters
+data:
+  query: "cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM OR cat:cs.LG"
+  max_results: 100
+  source: "arxiv"
+  output_format: "csv"
+
+# Feature engineering parameters
+feature_engineering:
+  # TF-IDF parameters
+  tfidf_max_features: 5000
+  ngram_range: [1, 2]
+  min_df: 2
+  max_df: 0.95
+  use_tfidf: true
+  lowercase: true
+  stop_words: "english"
+
+  # Text columns to process
+  text_columns:
+    - "title"
+    - "abstract"
+    - "keywords"
+
+  # Categorical columns
+  categorical_columns:
+    - "journal_category"
+    - "year_category"
+    - "author_count_category"
+
+  # Numerical columns
+  numerical_columns:
+    - "year"
+    - "title_length"
+    - "abstract_length"
+    - "author_count"
+    - "num_keywords"
+
+# Training parameters
+train:
+  algorithm: "RandomForestClassifier"
+  test_size: 0.2
+  random_state: 42
+
+  # Cross-validation
+  cross_validation:
+    folds: 5
+    scoring: "accuracy"
+    stratify: true
+
+  # Random Forest parameters
+  random_forest:
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+    max_features: "sqrt"
+    bootstrap: true
+    oob_score: true
+
+  # Alternative algorithms (for experimentation)
+  svm:
+    kernel: "rbf"
+    C: 1.0
+    gamma: "scale"
+    probability: true
+
+  logistic_regression:
+    penalty: "l2"
+    C: 1.0
+    max_iter: 1000
+    solver: "liblinear"
+
+# Model evaluation parameters
+evaluate:
+  target_column: "arxiv_categories"
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+
+  # Visualization parameters
+  plot_style: "seaborn"
+  dpi: 300
+  figure_size: [12, 8]
+
+  # Report generation
+  include_classification_report: true
+  include_confusion_matrix: true
+  include_feature_importance: true
+  top_features_to_show: 20
+
+# MLflow configuration
+mlflow:
+  experiment_name: "arxiv_publications_classification"
+  run_name: "baseline_model"
+  tracking_uri: "file:./mlruns"
+
+  # Tagging
+  tags:
+    project: "research_agents_hub"
+    data_source: "arxiv"
+    model_type: "classification"
+    data_version: "v2.0"
+    pipeline_version: "automated"
+
+  # Artifacts to log
+  log_artifacts:
+    - "models/"
+    - "reports/"
+    - "data/processed/"
+
+# Reproducibility settings
+reproducibility:
+  deterministic: true
+  seed: 42
+  python_hash_seed: 42
+
+# Resource management
+resources:
+  memory_limit: "4G"
+  n_jobs: -1
+  verbose: 1
+
+# Data versioning
+versioning:
+  auto_stage: true
+  data_remote: "local_storage"
+  model_registry: "mlflow"

@@ -1,0 +1,5 @@
+outs:
+- md5: e00ddf9baeddd54233c9205a90aad03d
+  size: 88436
+  hash: md5
+  path: arxiv_publications.csv

@@ -1,0 +1,62 @@
+data_schema:
+  columns:
+  - title
+  - authors
+  - journal
+  - year
+  - doi
+  - abstract
+  - keywords
+  - cited_by
+  - methodology
+  - dataset_used
+  - arxiv_id
+  - arxiv_categories
+  - published_date
+  - updated_date
+  - pdf_url
+  - arxiv_url
+  data_types:
+    abstract: string
+    arxiv_categories: string (comma-separated)
+    arxiv_id: string
+    arxiv_url: string (URL)
+    authors: string (comma-separated)
+    cited_by: integer
+    dataset_used: string
+    doi: string
+    journal: string
+    keywords: string (comma-separated)
+    methodology: string
+    pdf_url: string (URL)
+    published_date: date (YYYY-MM-DD)
+    title: string
+    updated_date: date (YYYY-MM-DD)
+    year: integer
+dataset_info:
+  created_at: '2025-12-21T17:55:32.638787'
+  description: 'Research papers fetched from ArXiv API using query: "machine learning
+    medical imaging"'
+  name: ArXiv Research Publications
+  query_used: machine learning medical imaging
+  source: ArXiv API (http://export.arxiv.org/api/query)
+  total_papers: 10
+quality_metrics:
+  completeness:
+    abstracts: 10
+    authors: 10
+    categories: 10
+    titles: 10
+statistics:
+  categories:
+    astro-ph.CO: 1
+    cs.AI: 4
+    cs.CL: 1
+    cs.CV: 8
+    cs.LG: 1
+    cs.RO: 1
+    hep-ph: 1
+  total_categories: 7
+  year_range:
+    max: 2025
+    min: 2025

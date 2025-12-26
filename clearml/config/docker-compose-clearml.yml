@@ -1,0 +1,121 @@
+version: "3.6"
+
+# ClearML Server - Упрощенная официальная конфигурация для домашнего задания
+# Основана на https://github.com/clearml/clearml-server/blob/master/docker/docker-compose.yml
+
+services:
+  apiserver:
+    command:
+      - apiserver
+    container_name: clearml-apiserver
+    image: clearml/server:latest
+    restart: unless-stopped
+    volumes:
+      - ./clearml_logs:/var/log/clearml
+      - ./clearml_config:/opt/clearml/config
+      - ./clearml_data/fileserver:/mnt/fileserver
+    depends_on:
+      - redis
+      - mongo
+      - elasticsearch
+      - fileserver
+    environment:
+      CLEARML_ELASTIC_SERVICE_HOST: elasticsearch
+      CLEARML_ELASTIC_SERVICE_PORT: 9200
+      CLEARML_MONGODB_SERVICE_HOST: mongo
+      CLEARML_MONGODB_SERVICE_PORT: 27017
+      CLEARML_REDIS_SERVICE_HOST: redis
+      CLEARML_REDIS_SERVICE_PORT: 6379
+      CLEARML_SERVER_DEPLOYMENT_TYPE: linux
+      CLEARML__apiserver__pre_populate__enabled: "false"
+      # CLEARML__apiserver__pre_populate__zip_files: "/opt/clearml/db-pre-populate"
+      # CLEARML__apiserver__pre_populate__artifacts_path: "/mnt/fileserver"
+    ports:
+      - "8008:8008"
+    networks:
+      - backend
+      - frontend
+
+  elasticsearch:
+    networks:
+      - backend
+    container_name: clearml-elastic
+    environment:
+      bootstrap.memory_lock: "true"
+      cluster.name: clearml
+      discovery.type: "single-node"
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    image: elasticsearch:7.16.2
+    restart: unless-stopped
+    volumes:
+      - ./clearml_data/elastic:/usr/share/elasticsearch/data
+
+  fileserver:
+    networks:
+      - backend
+      - frontend
+    command:
+      - fileserver
+    container_name: clearml-fileserver
+    image: clearml/server:latest
+    restart: unless-stopped
+    volumes:
+      - ./clearml_logs:/var/log/clearml
+      - ./clearml_data/fileserver:/mnt/fileserver
+      - ./clearml_config:/opt/clearml/config
+    ports:
+      - "8081:8081"
+
+  mongo:
+    networks:
+      - backend
+    container_name: clearml-mongo
+    image: mongo:4.4
+    restart: unless-stopped
+    volumes:
+      - ./clearml_data/mongo:/data/db
+
+  redis:
+    networks:
+      - backend
+    container_name: clearml-redis
+    image: redis:6.0-alpine
+    restart: unless-stopped
+    volumes:
+      - ./clearml_data/redis:/data
+
+  webserver:
+    command:
+      - webserver
+    container_name: clearml-webserver
+    image: clearml/server:latest
+    restart: unless-stopped
+    depends_on:
+      - apiserver
+    ports:
+      - "8080:80"
+    networks:
+      - backend
+      - frontend
+
+networks:
+  backend:
+    driver: bridge
+  frontend:
+    driver: bridge
+
+volumes:
+  clearml_data:
+    driver: local
+  clearml_logs:
+    driver: local
+  clearml_config:
+    driver: local

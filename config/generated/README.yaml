@@ -1,0 +1,12 @@
+generated_configs:
+  algorithms:
+  - RandomForestClassifier
+  - SVM
+  - LogisticRegression
+  data_sizes:
+  - small
+  - medium
+  - large
+  description: Автоматически сгенерированные конфигурации для разных алгоритмов
+  total_configs: 7
+  usage: Используйте эти конфигурации с automated_pipeline.py --config <path>

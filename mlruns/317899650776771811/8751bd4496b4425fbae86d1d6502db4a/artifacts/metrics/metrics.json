@@ -1,0 +1,27 @@
+{
+  "cross_validation": {
+    "mean_score": 0.275,
+    "std_score": 0.0637377439199098,
+    "scores": [
+      0.1875,
+      0.25,
+      0.375,
+      0.25,
+      0.3125
+    ]
+  },
+  "test_metrics": {
+    "accuracy": 0.2,
+    "precision": 0.1,
+    "recall": 0.2,
+    "f1_score": 0.13333333333333333
+  },
+  "model_info": {
+    "algorithm": "LogisticRegression",
+    "training_samples": 80,
+    "test_samples": 20,
+    "features": 2080,
+    "classes": 44
+  },
+  "training_date": "2025-12-21T23:48:25.574448"
+}
