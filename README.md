@@ -6,10 +6,13 @@
 
 мультиагентная система, которая автоматизирует мониторинг и анализ научных публикаций в области цифровой патологии и анализа WSI (Whole Slide Imaging) данных. Система работает как умный исследовательский ассистент, который непрерывно отслеживает новые разработки в области анализа гистопатологических изображений.
 
+--------
+
 ## Project Organization
 
 ```
 ├── LICENSE            <- Open-source license if one is chosen
+├── Dockerfile
 ├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
 ├── README.md          <- The top-level README for developers using this project.
 ├── data
@@ -56,6 +59,3 @@
     │
     └── plots.py                <- Code to create visualizations
 ```
-
---------
-
