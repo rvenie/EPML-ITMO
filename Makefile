@@ -138,6 +138,30 @@ notebook: install
 	poetry run jupyter notebook
 
 #################################################################################
+# DOCUMENTATION                                                                 #
+#################################################################################
+
+## Build documentation locally
+.PHONY: docs-build
+docs-build:
+	poetry run mkdocs build
+
+## Serve documentation locally
+.PHONY: docs-serve
+docs-serve:
+	poetry run mkdocs serve --dev-addr localhost:8000
+
+## Generate experiment reports
+.PHONY: reports
+reports:
+	poetry run python scripts/generate_reports.py --output-dir reports
+
+## Clean documentation build
+.PHONY: docs-clean
+docs-clean:
+	rm -rf site/
+
+#################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
 

@@ -1,0 +1,163 @@
+/* Extra CSS for ResearchHub Documentation */
+
+/* Custom colors */
+:root {
+  --md-primary-fg-color: #4051b5;
+  --md-primary-fg-color--light: #5c6bc0;
+  --md-primary-fg-color--dark: #303f9f;
+  --md-accent-fg-color: #2196f3;
+}
+
+/* Dark mode adjustments */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #5c6bc0;
+  --md-accent-fg-color: #64b5f6;
+}
+
+/* Table styling */
+.md-typeset table:not([class]) {
+  font-size: 0.85rem;
+  border-collapse: collapse;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-primary-fg-color);
+  color: white;
+  font-weight: 600;
+}
+
+.md-typeset table:not([class]) td {
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset table:not([class]) tr:nth-child(even) {
+  background-color: var(--md-default-fg-color--lightest);
+}
+
+/* Code block styling */
+.md-typeset pre > code {
+  font-size: 0.8rem;
+}
+
+.md-typeset code {
+  background-color: var(--md-code-bg-color);
+  padding: 0.1em 0.3em;
+  border-radius: 0.2em;
+}
+
+/* Admonition customization */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: #00c853;
+}
+
+.md-typeset .admonition.tip > .admonition-title,
+.md-typeset details.tip > summary {
+  background-color: rgba(0, 200, 83, 0.1);
+}
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  border-color: #ff9100;
+}
+
+.md-typeset .admonition.warning > .admonition-title,
+.md-typeset details.warning > summary {
+  background-color: rgba(255, 145, 0, 0.1);
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+/* Navigation improvements */
+.md-nav__title {
+  font-weight: 600;
+}
+
+.md-nav__link--active {
+  font-weight: 600;
+  color: var(--md-accent-fg-color);
+}
+
+/* Search highlighting */
+.md-search-result__article--highlight {
+  background-color: rgba(255, 235, 59, 0.3);
+}
+
+/* Footer styling */
+.md-footer {
+  margin-top: 2rem;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 76.1875em) {
+  .md-typeset table:not([class]) {
+    font-size: 0.75rem;
+  }
+}
+
+/* Print styling */
+@media print {
+  .md-sidebar,
+  .md-header,
+  .md-footer {
+    display: none;
+  }
+}
+
+/* Custom grid cards */
+.grid.cards > ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.8rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.grid.cards > ul > li {
+  background: var(--md-default-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.4rem;
+  padding: 1rem;
+}
+
+.grid.cards > ul > li:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Metric highlight */
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--md-primary-fg-color);
+}
+
+/* Status badges */
+.status-success {
+  background-color: #00c853;
+  color: white;
+  padding: 0.2em 0.5em;
+  border-radius: 0.3em;
+  font-size: 0.8rem;
+}
+
+.status-warning {
+  background-color: #ff9100;
+  color: white;
+  padding: 0.2em 0.5em;
+  border-radius: 0.3em;
+  font-size: 0.8rem;
+}
+
+.status-error {
+  background-color: #ff1744;
+  color: white;
+  padding: 0.2em 0.5em;
+  border-radius: 0.3em;
+  font-size: 0.8rem;
+}
