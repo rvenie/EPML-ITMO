@@ -29,7 +29,29 @@ update:
 ## Export dependencies to requirements.txt (for CI/CD compatibility)
 .PHONY: export
 export:
-	poetry export -f requirements.txt --output requirements.txt --without-hashes
+	poetry export -f requirements.txt --output requirements.txt
+
+#################################################################################
+# CLEARML                                                                       #
+#################################################################################
+
+## Start ClearML server (Docker)
+.PHONY: clearml-server
+clearml-server:
+	cd clearml/config && docker-compose -f docker-compose-clearml.yml up -d
+	@echo "ClearML server starting... Wait 1-2 minutes"
+	@echo "Web interface: http://localhost:8080"
+
+## Stop ClearML server
+.PHONY: clearml-stop
+clearml-stop:
+	cd clearml/config && docker-compose -f docker-compose-clearml.yml down
+	@echo "ClearML server stopped"
+
+## Run ML experiment with ClearML tracking
+.PHONY: clearml-test
+clearml-test:
+	$(PYTHON_INTERPRETER) clearml/pipelines/pipeline_scheduler.py test
 
 ## Delete all compiled Python files
 .PHONY: clean

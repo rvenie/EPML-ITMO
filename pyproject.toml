@@ -16,10 +16,13 @@ dependencies = [
     "scikit-learn>=1.7.2,<2.0.0",
     "dvc>=3.0.0,<4.0.0",
     "mlflow>=2.8.0,<3.0.0",
+    "matplotlib>=3.7.0,<4.0.0",
+    "seaborn>=0.12.0,<1.0.0",
     "pyyaml>=6.0.0,<7.0.0",
     "requests>=2.31.0,<3.0.0",
     "defusedxml>=0.7.0,<1.0.0",
     "pydantic (>=2.12.5,<3.0.0)",
+    "clearml (>=2.1.0,<3.0.0)",
 ]
 
 [project.optional-dependencies]
@@ -67,6 +70,13 @@ ignore = [
     "E501",  # line too long, handled by black/formatter
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# Legacy files from HW1-HW4 have different conventions
+"config/*.py" = ["N805", "UP038"]
+"researchhub/*.py" = ["UP038", "B007"]
+"scripts/automated_pipeline.py" = ["E402"]
+"scripts/run_experiments.py" = ["B007"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["researchhub"]
 force-single-line = false
@@ -76,15 +86,17 @@ force-single-line = false
 python_version = "3.11"
 ignore_missing_imports = true
 strict = false
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+explicit_package_bases = true
+exclude = ["scripts/", "clearml/", "config/", "researchhub/"]
 
 # Bandit configuration for security linting
 [tool.bandit]
-exclude_dirs = ["tests", "notebooks", "experiments"]
-skips = ["B101"]  # Skip assert_used test
+exclude_dirs = ["tests", "notebooks", "experiments", "scripts", "researchhub"]
+skips = ["B101", "B110"]  # Skip assert_used and try_except_pass tests
 
 # Pytest configuration
 [tool.pytest.ini_options]

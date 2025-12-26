@@ -1,0 +1,54 @@
+{
+  "schedule": {
+    "enabled": true,
+    "interval_hours": 24,
+    "start_time": "02:00",
+    "description": "Автоматический запуск каждые 24 часа в 02:00"
+  },
+  "monitoring": {
+    "check_interval_minutes": 15,
+    "max_runtime_hours": 4,
+    "timeout_action": "log",
+    "description": "Проверка каждые 15 минут, максимальное время выполнения 4 часа"
+  },
+  "notifications": {
+    "enabled": true,
+    "email_enabled": false,
+    "log_level": "INFO",
+    "notify_on_success": true,
+    "notify_on_failure": true,
+    "notify_on_timeout": true,
+    "notify_on_start": true,
+    "email": {
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "to_addresses": [],
+      "from_address": ""
+    },
+    "description": "Настройки уведомлений - пока только через логи"
+  },
+  "pipeline": {
+    "project_name": "ResearchHub",
+    "queue_name": "default",
+    "input_file": "data/processed/publications_processed.csv",
+    "auto_retry": false,
+    "max_retries": 1,
+    "description": "Настройки ML пайплайна"
+  },
+  "logging": {
+    "level": "INFO",
+    "file_path": "pipeline_scheduler.log",
+    "max_file_size_mb": 50,
+    "backup_count": 5,
+    "format": "%(asctime)s - %(levelname)s - %(message)s",
+    "description": "Настройки логирования системы"
+  },
+  "system": {
+    "max_concurrent_pipelines": 2,
+    "health_check_enabled": true,
+    "health_check_interval_minutes": 60,
+    "description": "Системные настройки планировщика"
+  }
+}
