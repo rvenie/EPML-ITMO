@@ -4,11 +4,11 @@
 site_name: ResearchHub Documentation
 site_description: ML pipeline для анализа научных публикаций ArXiv с DVC и MLflow
 site_author: Research Team
-site_url: https://your-username.github.io/research-agets-hub/
+site_url: https://rvenie.github.io/research_agets_hub/
 
 # Repository
-repo_name: research-agets-hub
-repo_url: https://github.com/your-username/research-agets-hub
+repo_name: research_agets_hub
+repo_url: https://github.com/rvenie/EPML-ITMO
 edit_uri: edit/main/docs/
 
 # Theme configuration
@@ -125,6 +125,4 @@ extra_css:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/your-username/research-agets-hub
-  version:
-    provider: mike
+      link: https://github.com/rvenie/EPML-ITMO

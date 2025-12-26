@@ -179,7 +179,7 @@ jobs:
 После пуша в main документация автоматически:
 1. Собирается с помощью MkDocs
 2. Загружается как GitHub Pages artifact
-3. Публикуется на `https://username.github.io/repository/`
+3. Публикуется на `https://rvenie.github.io/repository/`
 
 ### ✅ Настроено автоматическое обновление при изменениях
 
