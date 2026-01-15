@@ -9,9 +9,12 @@ import argparse
 import json
 import logging
 import pickle  # nosec
+import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+
+# Добавляем корневую директорию в путь для импорта config
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # MLflow
 import mlflow
@@ -35,6 +38,9 @@ from sklearn.metrics import (
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.svm import SVC
 
+# Импорт Pydantic моделей для валидации
+from config.pipeline_config import PipelineConfig, load_config
+
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
@@ -45,15 +51,25 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_params(params_file: str) -> dict[str, Any]:
-    """Загружает параметры из YAML файла."""
+def load_params(params_file: str) -> PipelineConfig:
+    """
+    Загружает и валидирует параметры из YAML файла через Pydantic.
+
+    Args:
+        params_file: Путь к файлу конфигурации
+
+    Returns:
+        PipelineConfig: Валидированная конфигурация
+    """
     try:
-        with open(params_file) as f:
-            params = yaml.safe_load(f)
-        logger.info(f"Loaded parameters from {params_file}")
-        return params
+        # Используем Pydantic для загрузки и валидации
+        config = load_config(params_file)
+        logger.info(f"✅ Loaded and validated parameters from {params_file}")
+        logger.info(f"   Algorithm: {config.train.algorithm}")
+        logger.info(f"   Experiment: {config.mlflow.experiment_name}")
+        return config
     except Exception as e:
-        logger.error(f"Error loading parameters: {e}")
+        logger.error(f"❌ Error loading/validating parameters: {e}")
         raise
 
 
@@ -69,41 +85,51 @@ def load_data(data_file: str) -> pd.DataFrame:
 
 
 def create_features(
-    df: pd.DataFrame, params: dict[str, Any]
+    df: pd.DataFrame, config: PipelineConfig
 ) -> tuple[np.ndarray, np.ndarray, TfidfVectorizer]:
-    """Создает матрицу признаков и целевой вектор."""
-    feature_params = params["feature_engineering"]
+    """
+    Создает матрицу признаков и целевой вектор.
+
+    Args:
+        df: DataFrame с данными
+        config: Валидированная Pydantic конфигурация
+
+    Returns:
+        tuple: (X, y, tfidf_vectorizer)
+    """
+    # Используем Pydantic модель напрямую
+    feature_config = config.feature_engineering
 
     # Текстовые признаки
-    text_columns = feature_params["text_columns"]
+    text_columns = feature_config.text_columns
     text_data = df[text_columns].fillna("").apply(lambda x: " ".join(x), axis=1)
 
-    # TF-IDF векторизация
+    # TF-IDF векторизация с параметрами из Pydantic
     tfidf = TfidfVectorizer(
-        max_features=feature_params["tfidf_max_features"],
-        ngram_range=tuple(feature_params["ngram_range"]),
-        min_df=feature_params["min_df"],
-        max_df=feature_params["max_df"],
-        lowercase=feature_params["lowercase"],
-        stop_words=feature_params["stop_words"],
+        max_features=feature_config.tfidf_max_features,
+        ngram_range=tuple(feature_config.ngram_range),
+        min_df=feature_config.min_df,
+        max_df=feature_config.max_df,
+        lowercase=feature_config.lowercase,
+        stop_words=feature_config.stop_words,
     )
 
     text_features = tfidf.fit_transform(text_data).toarray()
     logger.info(f"Created {text_features.shape[1]} text features")
 
     # Числовые признаки
-    numerical_cols = feature_params["numerical_columns"]
+    numerical_cols = feature_config.numerical_columns
     numerical_features = df[numerical_cols].fillna(0).values
 
     # Категориальные признаки (one-hot кодирование)
-    categorical_cols = feature_params["categorical_columns"]
+    categorical_cols = feature_config.categorical_columns
     categorical_features = pd.get_dummies(df[categorical_cols]).values
 
     # Объединяем все признаки
     X = np.hstack([text_features, numerical_features, categorical_features])
 
-    # Целевая переменная
-    target_col = params["evaluate"]["target_column"]
+    # Целевая переменная из Pydantic config
+    target_col = config.evaluate.target_column
     y = df[target_col].values
 
     logger.info(f"Final feature matrix shape: {X.shape}")
@@ -112,38 +138,52 @@ def create_features(
     return X, y, tfidf
 
 
-def get_model(algorithm: str, params: dict[str, Any]):
-    """Возвращает экземпляр модели на основе алгоритма и параметров."""
+def get_model(algorithm: str, config: PipelineConfig):
+    """
+    Возвращает экземпляр модели на основе алгоритма и Pydantic конфигурации.
+
+    Args:
+        algorithm: Название алгоритма
+        config: Валидированная Pydantic конфигурация
+
+    Returns:
+        Экземпляр модели sklearn
+    """
+    train_config = config.train
+
     if algorithm == "RandomForestClassifier":
-        rf_params = params["train"]["random_forest"]
+        # Используем Pydantic модель RandomForestConfig
+        rf = train_config.random_forest
         return RandomForestClassifier(
-            n_estimators=rf_params["n_estimators"],
-            max_depth=rf_params["max_depth"],
-            min_samples_split=rf_params["min_samples_split"],
-            min_samples_leaf=rf_params["min_samples_leaf"],
-            max_features=rf_params["max_features"],
-            bootstrap=rf_params["bootstrap"],
-            oob_score=rf_params["oob_score"],
-            random_state=params["train"]["random_state"],
+            n_estimators=rf.n_estimators,
+            max_depth=rf.max_depth,
+            min_samples_split=rf.min_samples_split,
+            min_samples_leaf=rf.min_samples_leaf,
+            max_features=rf.max_features,
+            bootstrap=rf.bootstrap,
+            oob_score=rf.oob_score,
+            random_state=train_config.random_state,
             n_jobs=-1,
         )
     elif algorithm == "SVM":
-        svm_params = params["train"]["svm"]
+        # Параметры SVM из config
+        svm_dict = config.model_dump().get("train", {}).get("svm", {})
         return SVC(
-            kernel=svm_params["kernel"],
-            C=svm_params["C"],
-            gamma=svm_params["gamma"],
-            probability=svm_params["probability"],
-            random_state=params["train"]["random_state"],
+            kernel=svm_dict.get("kernel", "rbf"),
+            C=svm_dict.get("C", 1.0),
+            gamma=svm_dict.get("gamma", "scale"),
+            probability=svm_dict.get("probability", True),
+            random_state=train_config.random_state,
         )
     elif algorithm == "LogisticRegression":
-        lr_params = params["train"]["logistic_regression"]
+        # Параметры LR из config
+        lr_dict = config.model_dump().get("train", {}).get("logistic_regression", {})
         return LogisticRegression(
-            penalty=lr_params["penalty"],
-            C=lr_params["C"],
-            max_iter=lr_params["max_iter"],
-            solver=lr_params["solver"],
-            random_state=params["train"]["random_state"],
+            penalty=lr_dict.get("penalty", "l2"),
+            C=lr_dict.get("C", 1.0),
+            max_iter=lr_dict.get("max_iter", 1000),
+            solver=lr_dict.get("solver", "liblinear"),
+            random_state=train_config.random_state,
             n_jobs=-1,
         )
     else:
@@ -177,73 +217,99 @@ def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> dict[str, f
 
 
 def train_model(
-    data_file: str, params_file: str, model_output: str, metrics_output: str
+    data_file: str,
+    params_file: str,
+    model_output: str,
+    metrics_output: str,
+    algorithm: str | None = None,
 ):
     """Основная функция обучения с логированием в MLflow."""
 
-    # Загружаем параметры и данные
-    params = load_params(params_file)
+    # Загружаем и валидируем параметры через Pydantic
+    config = load_params(params_file)
     df = load_data(data_file)
 
-    # Настройка MLflow
-    mlflow_params = params["mlflow"]
-    mlflow.set_tracking_uri(mlflow_params["tracking_uri"])
-    mlflow.set_experiment(mlflow_params["experiment_name"])
+    # Переопределяем алгоритм если передан через командную строку
+    if algorithm:
+        # Обновляем конфигурацию (Pydantic позволяет это)
+        config.train.algorithm = algorithm
+        logger.info(f"✏️ Algorithm overridden from command line: {algorithm}")
 
-    with mlflow.start_run(run_name=mlflow_params["run_name"]):
-        # Логируем параметры
-        train_params = params["train"]
+    # Настройка MLflow через Pydantic config
+    mlflow.set_tracking_uri(config.mlflow.tracking_uri)
+    mlflow.set_experiment(config.mlflow.experiment_name)
+
+    # Формируем уникальное имя для каждого запуска на основе алгоритма
+    # Если run_name не задан или равен "baseline_model", генерируем автоматически
+    if config.mlflow.run_name and config.mlflow.run_name != "baseline_model":
+        run_name = config.mlflow.run_name
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_name = f"{config.train.algorithm}_{timestamp}"
+
+    with mlflow.start_run(run_name=run_name):
+        # Логируем параметры из Pydantic модели
         mlflow.log_params(
             {
-                "algorithm": train_params["algorithm"],
-                "test_size": train_params["test_size"],
-                "random_state": train_params["random_state"],
-                "cv_folds": train_params["cross_validation"]["folds"],
+                "algorithm": config.train.algorithm,
+                "test_size": config.train.test_size,
+                "random_state": config.train.random_state,
+                "cv_folds": config.train.cross_validation.get("folds", 5),
             }
         )
 
-        # Логируем специфические параметры алгоритма
-        if train_params["algorithm"] == "RandomForestClassifier":
-            mlflow.log_params(params["train"]["random_forest"])
-        elif train_params["algorithm"] == "SVM":
-            mlflow.log_params(params["train"]["svm"])
-        elif train_params["algorithm"] == "LogisticRegression":
-            mlflow.log_params(params["train"]["logistic_regression"])
+        # Логируем специфические параметры алгоритма из Pydantic
+        if config.train.algorithm == "RandomForestClassifier":
+            mlflow.log_params(config.train.random_forest.model_dump())
+        elif config.train.algorithm == "SVM":
+            svm_params = config.model_dump().get("train", {}).get("svm", {})
+            mlflow.log_params(svm_params)
+        elif config.train.algorithm == "LogisticRegression":
+            lr_params = (
+                config.model_dump().get("train", {}).get("logistic_regression", {})
+            )
+            mlflow.log_params(lr_params)
 
-        # Логируем параметры предобработки признаков
-        mlflow.log_params(params["feature_engineering"])
+        # Логируем параметры предобработки признаков из Pydantic
+        mlflow.log_params(
+            config.feature_engineering.model_dump(
+                exclude={"text_columns", "categorical_columns", "numerical_columns"}
+            )
+        )
 
-        # Добавляем теги
-        for key, value in mlflow_params["tags"].items():
+        # Добавляем теги из Pydantic config
+        for key, value in config.mlflow.tags.items():
             mlflow.set_tag(key, value)
 
-        # Создаем признаки
+        # Создаем признаки используя Pydantic config
         logger.info("Creating features...")
-        X, y, tfidf = create_features(df, params)
+        X, y, tfidf = create_features(df, config)
 
-        # Разделяем данные
+        # Разделяем данные по параметрам из Pydantic
         X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
-            test_size=train_params["test_size"],
-            random_state=train_params["random_state"],
+            test_size=config.train.test_size,
+            random_state=config.train.random_state,
         )
 
         logger.info(f"Training set size: {X_train.shape}")
         logger.info(f"Test set size: {X_test.shape}")
 
-        # Инициализируем и обучаем модель
-        logger.info(f"Training {train_params['algorithm']} model...")
-        model = get_model(train_params["algorithm"], params)
+        # Инициализируем и обучаем модель используя Pydantic config
+        logger.info(f"Training {config.train.algorithm} model...")
+        model = get_model(config.train.algorithm, config)
         model.fit(X_train, y_train)
 
-        # Кросс-валидация
+        # Кросс-валидация с параметрами из Pydantic
+        cv_folds = config.train.cross_validation.get("folds", 5)
+        cv_scoring = config.train.cross_validation.get("scoring", "accuracy")
         cv_scores = cross_val_score(
             model,
             X_train,
             y_train,
-            cv=train_params["cross_validation"]["folds"],
-            scoring=train_params["cross_validation"]["scoring"],
+            cv=cv_folds,
+            scoring=cv_scoring,
             n_jobs=-1,
         )
 
@@ -277,7 +343,7 @@ def train_model(
             artifact_path="model",
             signature=signature,
             input_example=X_train[:5],
-            registered_model_name=f"{mlflow_params['experiment_name']}_model",
+            registered_model_name=f"{config.mlflow.experiment_name}_model",
         )
 
         # Сохраняем модель локально
@@ -288,13 +354,11 @@ def train_model(
             "model": model,
             "tfidf_vectorizer": tfidf,
             "feature_columns": {
-                "text_columns": params["feature_engineering"]["text_columns"],
-                "numerical_columns": params["feature_engineering"]["numerical_columns"],
-                "categorical_columns": params["feature_engineering"][
-                    "categorical_columns"
-                ],
+                "text_columns": config.feature_engineering.text_columns,
+                "numerical_columns": config.feature_engineering.numerical_columns,
+                "categorical_columns": config.feature_engineering.categorical_columns,
             },
-            "target_column": params["evaluate"]["target_column"],
+            "target_column": config.evaluate.target_column,
             "training_date": datetime.now().isoformat(),
             "model_version": "1.0.0",
         }
@@ -313,7 +377,7 @@ def train_model(
             },
             "test_metrics": {k: float(v) for k, v in test_metrics.items()},
             "model_info": {
-                "algorithm": train_params["algorithm"],
+                "algorithm": config.train.algorithm,
                 "training_samples": int(X_train.shape[0]),
                 "test_samples": int(X_test.shape[0]),
                 "features": int(X.shape[1]),
@@ -327,22 +391,22 @@ def train_model(
 
         logger.info(f"Metrics saved to {metrics_output}")
 
-        # Создаем метаданные модели
+        # Создаем метаданные модели из Pydantic config
         metadata_file = model_output.replace(".pkl", "_metadata.yaml")
         metadata = {
-            "model_name": f"{mlflow_params['experiment_name']}_model",
+            "model_name": f"{config.mlflow.experiment_name}_model",
             "model_version": "1.0.0",
-            "algorithm": train_params["algorithm"],
+            "algorithm": config.train.algorithm,
             "training_date": datetime.now().isoformat(),
             "mlflow_run_id": mlflow.active_run().info.run_id,
-            "data_version": mlflow_params["tags"]["data_version"],
+            "data_version": config.mlflow.tags.get("data_version", "unknown"),
             "performance": {
                 "cv_accuracy": float(cv_scores.mean()),
                 "test_accuracy": float(test_metrics["accuracy"]),
                 "test_f1_score": float(test_metrics["f1_score"]),
             },
-            "hyperparameters": train_params,
-            "feature_engineering": params["feature_engineering"],
+            "hyperparameters": config.train.model_dump(),
+            "feature_engineering": config.feature_engineering.model_dump(),
             "data_info": {
                 "training_samples": int(X_train.shape[0]),
                 "test_samples": int(X_test.shape[0]),
@@ -381,11 +445,19 @@ def main():
     parser.add_argument(
         "--params", type=str, default="params.yaml", help="Parameters YAML file"
     )
+    parser.add_argument(
+        "--algorithm",
+        type=str,
+        choices=["RandomForestClassifier", "SVM", "LogisticRegression"],
+        help="ML algorithm to use (overrides params.yaml)",
+    )
 
     args = parser.parse_args()
 
     # Обучаем модель
-    train_model(args.input, args.params, args.model_output, args.metrics)
+    train_model(
+        args.input, args.params, args.model_output, args.metrics, args.algorithm
+    )
 
 
 if __name__ == "__main__":

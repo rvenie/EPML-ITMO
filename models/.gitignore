@@ -1,2 +1,8 @@
 /classifier.pkl
 /classifier_metadata.yaml
+/rf_classifier.pkl
+/rf_classifier_metadata.yaml
+/svm_classifier.pkl
+/svm_classifier_metadata.yaml
+/lr_classifier.pkl
+/lr_classifier_metadata.yaml

@@ -105,6 +105,11 @@ train: install
 pipeline: install
 	poetry run dvc repro
 
+## Run full DVC pipeline with force (train stages run in parallel automatically)
+.PHONY: pipeline-force
+pipeline-force: install
+	poetry run dvc repro --force
+
 ## Start MLflow UI
 .PHONY: mlflow-ui
 mlflow-ui:

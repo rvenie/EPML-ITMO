@@ -3,93 +3,87 @@
 
 # Data fetching parameters
 data:
-  query: "cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM OR cat:cs.LG"
+  query: cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM OR cat:cs.LG
   max_results: 100
-  source: "arxiv"
-  output_format: "csv"
+  source: arxiv
+  output_format: csv
 
 # Feature engineering parameters
 feature_engineering:
   # TF-IDF parameters
   tfidf_max_features: 5000
-  ngram_range: [1, 2]
+  ngram_range:
+  - 1
+  - 2
   min_df: 2
   max_df: 0.95
   use_tfidf: true
   lowercase: true
-  stop_words: "english"
+  stop_words: english
 
   # Text columns to process
   text_columns:
-    - "title"
-    - "abstract"
-    - "keywords"
-
-  # Categorical columns
+  - title
+  - abstract
+  - keywords
   categorical_columns:
-    - "journal_category"
-    - "year_category"
-    - "author_count_category"
-
-  # Numerical columns
+  - journal_category
+  - year_category
+  - author_count_category
   numerical_columns:
-    - "year"
-    - "title_length"
-    - "abstract_length"
-    - "author_count"
-    - "num_keywords"
-
-# Training parameters
+  - year
+  - title_length
+  - abstract_length
+  - author_count
+  - num_keywords
 train:
-  algorithm: "RandomForestClassifier"
+  algorithm: RandomForestClassifier
   test_size: 0.2
   random_state: 42
 
   # Cross-validation
   cross_validation:
     folds: 5
-    scoring: "accuracy"
+    scoring: accuracy
     stratify: true
 
   # Random Forest parameters
   random_forest:
-    n_estimators: 100
+    n_estimators: 200
     max_depth: 10
     min_samples_split: 5
     min_samples_leaf: 2
-    max_features: "sqrt"
+    max_features: sqrt
     bootstrap: true
     oob_score: true
 
   # Alternative algorithms (for experimentation)
   svm:
-    kernel: "rbf"
+    kernel: rbf
     C: 1.0
-    gamma: "scale"
+    gamma: scale
     probability: true
 
   logistic_regression:
-    penalty: "l2"
+    penalty: l2
     C: 1.0
     max_iter: 1000
-    solver: "liblinear"
+    solver: liblinear
 
 # Model evaluation parameters
 evaluate:
-  target_column: "arxiv_categories"
+  target_column: arxiv_categories
   metrics:
-    - "accuracy"
-    - "precision"
-    - "recall"
-    - "f1_score"
-    - "roc_auc"
-
-  # Visualization parameters
-  plot_style: "seaborn"
+  - accuracy
+  - precision
+  - recall
+  - f1_score
+  - roc_auc
+  plot_style: seaborn
   dpi: 300
-  figure_size: [12, 8]
-
-  # Report generation
+  figure_size:
+  - 12
+  - 8
   include_classification_report: true
   include_confusion_matrix: true
   include_feature_importance: true
@@ -97,25 +91,23 @@ evaluate:
 
 # MLflow configuration
 mlflow:
-  experiment_name: "arxiv_publications_classification"
-  run_name: "baseline_model"
-  tracking_uri: "file:./mlruns"
+  experiment_name: arxiv_publications_classification
+  run_name:       # Если null или "baseline_model", генерируется автоматически как {algorithm}_{timestamp}
+  tracking_uri: file:./mlruns
 
   # Tagging
   tags:
-    project: "research_agents_hub"
-    data_source: "arxiv"
-    model_type: "classification"
-    data_version: "v2.0"
-    pipeline_version: "automated"
+    project: research_agents_hub
+    data_source: arxiv
+    model_type: classification
+    data_version: v2.0
+    pipeline_version: automated
 
   # Artifacts to log
   log_artifacts:
-    - "models/"
-    - "reports/"
-    - "data/processed/"
-
-# Reproducibility settings
+  - models/
+  - reports/
+  - data/processed/
 reproducibility:
   deterministic: true
   seed: 42
@@ -123,12 +115,12 @@ reproducibility:
 
 # Resource management
 resources:
-  memory_limit: "4G"
+  memory_limit: 4G
   n_jobs: -1
   verbose: 1
 
 # Data versioning
 versioning:
   auto_stage: true
-  data_remote: "local_storage"
-  model_registry: "mlflow"
+  data_remote: local_storage
+  model_registry: mlflow

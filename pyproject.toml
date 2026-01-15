@@ -65,6 +65,10 @@ select = [
 ]
 ignore = [
     "E501",  # line too long, handled by black/formatter
+    "N806",  # Variable X in function should be lowercase (ML convention)
+    "N803",  # Argument name should be lowercase (ML convention)
+    "N805",  # First argument should be self (Pydantic validators use cls)
+    "UP038", # Use | instead of Union (keep compatibility)
 ]
 
 [tool.ruff.lint.isort]

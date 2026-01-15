@@ -194,3 +194,15 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 /metrics.json
+
+
+clearml/*
+mlruns/*
+models/*
+
+# Pipeline temporary files
+pipeline_scheduler_state.json
+*.log
+training.log
+preprocessing.log
+pipeline.log
