@@ -29,29 +29,7 @@ update:
 ## Export dependencies to requirements.txt (for CI/CD compatibility)
 .PHONY: export
 export:
-	poetry export -f requirements.txt --output requirements.txt
-
-#################################################################################
-# CLEARML                                                                       #
-#################################################################################
-
-## Start ClearML server (Docker)
-.PHONY: clearml-server
-clearml-server:
-	cd clearml/config && docker-compose -f docker-compose-clearml.yml up -d
-	@echo "ClearML server starting... Wait 1-2 minutes"
-	@echo "Web interface: http://localhost:8080"
-
-## Stop ClearML server
-.PHONY: clearml-stop
-clearml-stop:
-	cd clearml/config && docker-compose -f docker-compose-clearml.yml down
-	@echo "ClearML server stopped"
-
-## Run ML experiment with ClearML tracking
-.PHONY: clearml-test
-clearml-test:
-	$(PYTHON_INTERPRETER) clearml/pipelines/pipeline_scheduler.py test
+	poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 ## Delete all compiled Python files
 .PHONY: clean
@@ -126,6 +104,11 @@ train: install
 .PHONY: pipeline
 pipeline: install
 	poetry run dvc repro
+
+## Run full DVC pipeline with force (train stages run in parallel automatically)
+.PHONY: pipeline-force
+pipeline-force: install
+	poetry run dvc repro --force
 
 ## Start MLflow UI
 .PHONY: mlflow-ui

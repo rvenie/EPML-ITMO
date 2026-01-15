@@ -8,12 +8,19 @@
 import argparse
 import logging
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import yaml  # type: ignore
+
+# Добавляем корневую директорию в путь для импорта config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Импорт Pydantic моделей для валидации
+from config.pipeline_config import PipelineConfig, load_config
 
 # Настройка логирования
 logging.basicConfig(
@@ -114,16 +121,49 @@ def calculate_impact_score(cited_by: int, year: int) -> float:
     return float(round(impact_score, 3))
 
 
+def load_params(params_file: str) -> PipelineConfig:
+    """
+    Загружает и валидирует параметры из YAML файла через Pydantic.
+
+    Args:
+        params_file: Путь к файлу конфигурации
+
+    Returns:
+        PipelineConfig: Валидированная конфигурация
+    """
+    try:
+        # Используем Pydantic для загрузки и валидации
+        config = load_config(params_file)
+        logger.info(
+            f"✅ Loaded and validated preprocessing parameters from {params_file}"
+        )
+        logger.info(f"   Text columns: {config.feature_engineering.text_columns}")
+        logger.info(
+            f"   Categorical columns: {config.feature_engineering.categorical_columns}"
+        )
+        logger.info(
+            f"   Numerical columns: {config.feature_engineering.numerical_columns}"
+        )
+        return config
+    except Exception as e:
+        logger.error(f"❌ Error loading/validating parameters: {e}")
+        raise
+
+
 def preprocess_data(
-    input_file: str, output_file: str, metadata_file: str | None = None
+    input_file: str,
+    output_file: str,
+    metadata_file: str | None = None,
+    config: PipelineConfig | None = None,
 ) -> None:
     """
-    Основная функция предобработки.
+    Основная функция предобработки с использованием Pydantic конфигурации.
 
     Args:
         input_file: Путь к входному CSV файлу
         output_file: Путь к выходному обработанному CSV файлу
         metadata_file: Опциональный путь для сохранения метаданных обработки
+        config: Валидированная Pydantic конфигурация (опционально)
     """
     logger.info(f"Starting data preprocessing: {input_file} -> {output_file}")
 
@@ -230,6 +270,8 @@ def preprocess_data(
                 "author_count",
                 "abstract_category",
                 "citation_category",
+                "year_category",
+                "author_count_category",
             ],
             "processing_steps": [
                 "Text cleaning and normalization",
@@ -248,6 +290,18 @@ def preprocess_data(
             },
         }
 
+        # Добавляем параметры из Pydantic config если доступны
+        if config:
+            processing_metadata["config_parameters"] = {
+                "text_columns": config.feature_engineering.text_columns,
+                "categorical_columns": config.feature_engineering.categorical_columns,
+                "numerical_columns": config.feature_engineering.numerical_columns,
+                "tfidf_max_features": config.feature_engineering.tfidf_max_features,
+                "ngram_range": config.feature_engineering.ngram_range,
+                "min_df": config.feature_engineering.min_df,
+                "max_df": config.feature_engineering.max_df,
+            }
+
         try:
             with open(metadata_file, "w") as f:
                 yaml.dump(processing_metadata, f, default_flow_style=False)
@@ -261,7 +315,7 @@ def preprocess_data(
 def main():
     """Главная функция с парсингом аргументов командной строки."""
     parser = argparse.ArgumentParser(
-        description="Preprocess research publications data"
+        description="Preprocess research publications data with Pydantic validation"
     )
     parser.add_argument(
         "--input",
@@ -281,8 +335,17 @@ def main():
         default="data/processed/processing_metadata.yaml",
         help="Processing metadata output file",
     )
+    parser.add_argument(
+        "--params",
+        type=str,
+        default="params.yaml",
+        help="Parameters YAML file with Pydantic validation",
+    )
 
     args = parser.parse_args()
+
+    # Загружаем и валидируем параметры через Pydantic
+    config = load_params(args.params)
 
     # Создаем выходную директорию если она не существует
     output_path = Path(args.output)
@@ -292,8 +355,8 @@ def main():
         metadata_path = Path(args.metadata)
         metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Запускаем предобработку
-    preprocess_data(args.input, args.output, args.metadata)
+    # Запускаем предобработку с Pydantic конфигурацией
+    preprocess_data(args.input, args.output, args.metadata, config)
 
 
 if __name__ == "__main__":

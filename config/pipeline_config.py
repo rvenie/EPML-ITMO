@@ -191,7 +191,7 @@ def load_config(config_path: str | Path) -> PipelineConfig:
     Raises:
         ValidationError: Если конфигурация не прошла валидацию
     """
-    import yaml
+    import yaml  # type: ignore[import-untyped]
 
     with open(config_path, encoding="utf-8") as f:
         config_data = yaml.safe_load(f)
