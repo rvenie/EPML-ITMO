@@ -36,6 +36,12 @@ dev = [
     "pytest-cov>=4.1.0",
     "types-PyYAML>=6.0.12.20250915",
 ]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+    "pymdown-extensions>=10.0"
+]
 
 [project.urls]
 Homepage = "https://github.com/your-org/research-agents-hub"
@@ -44,7 +50,29 @@ Issues = "https://github.com/your-org/research-agents-hub/issues"
 
 # Poetry-specific configuration
 [tool.poetry]
+name = "research-agents-hub"
+version = "0.1.0"
+description = "ML pipeline for ArXiv research publication analysis with DVC and MLflow"
+authors = ["Research Team <research@example.com>"]
 packages = [{include = "researchhub"}]
+
+[tool.poetry.group.dev.dependencies]
+ruff = ">=0.4.4"
+mypy = ">=1.10.0"
+bandit = ">=1.7.8"
+pre-commit = ">=3.7.1"
+pytest = ">=7.4.0"
+pytest-cov = ">=4.1.0"
+types-PyYAML = ">=6.0.12"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = ">=1.5.0"
+mkdocs-material = ">=9.5.0"
+mkdocstrings = {extras = ["python"], version = ">=0.24.0"}
+pymdown-extensions = ">=10.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -139,7 +167,3 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 
-[dependency-groups]
-dev = [
-    "types-pyyaml (>=6.0.12.20250915,<7.0.0.0)"
-]
