@@ -311,7 +311,7 @@ def analyze_results(results: list[dict[str, Any]]) -> dict[str, Any]:
         algorithm_stats[alg]["f1_scores"].append(result["test_f1_score"])
 
     # Средние метрики по алгоритмам
-    for alg, stats in algorithm_stats.items():
+    for _alg, stats in algorithm_stats.items():
         stats["mean_accuracy"] = sum(stats["accuracies"]) / len(stats["accuracies"])
         stats["mean_f1_score"] = sum(stats["f1_scores"]) / len(stats["f1_scores"])
         stats["best_accuracy"] = max(stats["accuracies"])
