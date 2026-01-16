@@ -1,5 +1,15 @@
 # DVC Pipeline Configuration
 # Automated ML pipeline with ArXiv data fetching for reproducible research
+# 
+# ClearML Integration:
+# - fetch_arxiv_data.py: Automatically uploads raw data to ClearML Dataset
+# - preprocess_data.py: Creates processed dataset version in ClearML
+# - train_model.py: Tracks experiments in ClearML with metrics and artifacts
+# 
+# To use ClearML:
+# 1. Start ClearML server: make clearml-server-up
+# 2. Setup credentials: make clearml-init
+# 3. Run pipeline: make pipeline (ClearML integration is automatic)
 
 stages:
   # Stage 1: Fetch data from ArXiv API
@@ -21,7 +31,7 @@ stages:
   preprocess:
     cmd:
       python scripts/preprocess_data.py --input data/raw/arxiv_publications.csv
-      --output data/processed/publications_processed.csv
+      --output data/processed/publications_processed.csv --params params.yaml
     deps:
       - scripts/preprocess_data.py
       - data/raw/arxiv_publications.csv
@@ -30,33 +40,108 @@ stages:
       - feature_engineering.text_columns
       - feature_engineering.categorical_columns
       - feature_engineering.numerical_columns
+      - feature_engineering.tfidf_max_features
+      - feature_engineering.ngram_range
+      - feature_engineering.min_df
+      - feature_engineering.max_df
     outs:
       - data/processed/publications_processed.csv
       - data/processed/processing_metadata.yaml
-    desc: Clean and preprocess raw ArXiv data for ML training
+    desc: Clean and preprocess raw ArXiv data for ML training with Pydantic validation
 
-  # Stage 3: Train the machine learning model
-  train:
-    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/classifier.pkl --metrics metrics.json
+  # Stage 3a: Train Random Forest model (parallel)
+  train_rf:
+    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/rf_classifier.pkl --metrics models/rf_metrics.json --algorithm RandomForestClassifier
     deps:
       - scripts/train_model.py
       - data/processed/publications_processed.csv
       - data/processed/processing_metadata.yaml
     params:
-      - train.algorithm
       - train.random_forest
       - train.test_size
       - train.random_state
       - mlflow.experiment_name
       - mlflow.tracking_uri
     outs:
-      - models/classifier.pkl
-      - models/classifier_metadata.yaml
+      - models/rf_classifier.pkl
+      - models/rf_classifier_metadata.yaml
     metrics:
-      - metrics.json
-    desc: Train machine learning model and log results to MLflow
+      - models/rf_metrics.json:
+          cache: false
+    desc: Train Random Forest model in parallel
+
+  # Stage 3b: Train SVM model (parallel)
+  train_svm:
+    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/svm_classifier.pkl --metrics models/svm_metrics.json --algorithm SVM
+    deps:
+      - scripts/train_model.py
+      - data/processed/publications_processed.csv
+      - data/processed/processing_metadata.yaml
+    params:
+      - train.svm
+      - train.test_size
+      - train.random_state
+      - mlflow.experiment_name
+      - mlflow.tracking_uri
+    outs:
+      - models/svm_classifier.pkl
+      - models/svm_classifier_metadata.yaml
+    metrics:
+      - models/svm_metrics.json:
+          cache: false
+    desc: Train SVM model in parallel
+
+  # Stage 3c: Train Logistic Regression model (parallel)
+  train_lr:
+    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv --model-output models/lr_classifier.pkl --metrics models/lr_metrics.json --algorithm LogisticRegression
+    deps:
+      - scripts/train_model.py
+      - data/processed/publications_processed.csv
+      - data/processed/processing_metadata.yaml
+    params:
+      - train.logistic_regression
+      - train.test_size
+      - train.random_state
+      - mlflow.experiment_name
+      - mlflow.tracking_uri
+    outs:
+      - models/lr_classifier.pkl
+      - models/lr_classifier_metadata.yaml
+    metrics:
+      - models/lr_metrics.json:
+          cache: false
+    desc: Train Logistic Regression model in parallel
 
 plots:
+  # Сравнение метрик всех моделей
+  - models/rf_metrics.json:
+      x: model_info.algorithm
+      y:
+        - test_metrics.accuracy
+        - test_metrics.precision
+        - test_metrics.recall
+        - test_metrics.f1_score
+      title: Random Forest Performance
+
+  - models/svm_metrics.json:
+      x: model_info.algorithm
+      y:
+        - test_metrics.accuracy
+        - test_metrics.precision
+        - test_metrics.recall
+        - test_metrics.f1_score
+      title: SVM Performance
+
+  - models/lr_metrics.json:
+      x: model_info.algorithm
+      y:
+        - test_metrics.accuracy
+        - test_metrics.precision
+        - test_metrics.recall
+        - test_metrics.f1_score
+      title: Logistic Regression Performance
+
+  # Визуализации (если будут созданы)
   - reports/confusion_matrix.png:
       title: Model Confusion Matrix
       template: confusion
@@ -65,23 +150,35 @@ plots:
       title: Feature Importance Analysis
       template: bar_horizontal
 
-  - metrics.json:
-      title: Training Metrics
-      x: epoch
-      y:
-        - accuracy
-        - precision
-        - recall
-        - f1_score
-
 # Artifacts configuration
 artifacts:
-  model:
-    path: models/classifier.pkl
+  random_forest_model:
+    path: models/rf_classifier.pkl
     type: model
-    desc: Trained classification model for research publication analysis
+    desc: Random Forest classification model for research publication analysis
     labels:
       - classification
+      - random-forest
+      - research-papers
+      - arxiv
+
+  svm_model:
+    path: models/svm_classifier.pkl
+    type: model
+    desc: SVM classification model for research publication analysis
+    labels:
+      - classification
+      - svm
+      - research-papers
+      - arxiv
+
+  logistic_regression_model:
+    path: models/lr_classifier.pkl
+    type: model
+    desc: Logistic Regression classification model for research publication analysis
+    labels:
+      - classification
+      - logistic-regression
       - research-papers
       - arxiv
 

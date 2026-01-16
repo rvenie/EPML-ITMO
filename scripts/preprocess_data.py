@@ -6,14 +6,30 @@
 """
 
 import argparse
+import hashlib
 import logging
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import yaml  # type: ignore
+
+# ClearML Dataset
+try:
+    from clearml import Dataset
+
+    CLEARML_AVAILABLE = True
+except ImportError:
+    CLEARML_AVAILABLE = False
+
+# Добавляем корневую директорию в путь для импорта config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Импорт Pydantic моделей для валидации
+from config.pipeline_config import PipelineConfig, load_config
 
 # Настройка логирования
 logging.basicConfig(
@@ -114,16 +130,49 @@ def calculate_impact_score(cited_by: int, year: int) -> float:
     return float(round(impact_score, 3))
 
 
+def load_params(params_file: str) -> PipelineConfig:
+    """
+    Загружает и валидирует параметры из YAML файла через Pydantic.
+
+    Args:
+        params_file: Путь к файлу конфигурации
+
+    Returns:
+        PipelineConfig: Валидированная конфигурация
+    """
+    try:
+        # Используем Pydantic для загрузки и валидации
+        config = load_config(params_file)
+        logger.info(
+            f"✅ Loaded and validated preprocessing parameters from {params_file}"
+        )
+        logger.info(f"   Text columns: {config.feature_engineering.text_columns}")
+        logger.info(
+            f"   Categorical columns: {config.feature_engineering.categorical_columns}"
+        )
+        logger.info(
+            f"   Numerical columns: {config.feature_engineering.numerical_columns}"
+        )
+        return config
+    except Exception as e:
+        logger.error(f"❌ Error loading/validating parameters: {e}")
+        raise
+
+
 def preprocess_data(
-    input_file: str, output_file: str, metadata_file: str | None = None
+    input_file: str,
+    output_file: str,
+    metadata_file: str | None = None,
+    config: PipelineConfig | None = None,
 ) -> None:
     """
-    Основная функция предобработки.
+    Основная функция предобработки с использованием Pydantic конфигурации.
 
     Args:
         input_file: Путь к входному CSV файлу
         output_file: Путь к выходному обработанному CSV файлу
         metadata_file: Опциональный путь для сохранения метаданных обработки
+        config: Валидированная Pydantic конфигурация (опционально)
     """
     logger.info(f"Starting data preprocessing: {input_file} -> {output_file}")
 
@@ -230,6 +279,8 @@ def preprocess_data(
                 "author_count",
                 "abstract_category",
                 "citation_category",
+                "year_category",
+                "author_count_category",
             ],
             "processing_steps": [
                 "Text cleaning and normalization",
@@ -248,6 +299,18 @@ def preprocess_data(
             },
         }
 
+        # Добавляем параметры из Pydantic config если доступны
+        if config:
+            processing_metadata["config_parameters"] = {
+                "text_columns": config.feature_engineering.text_columns,
+                "categorical_columns": config.feature_engineering.categorical_columns,
+                "numerical_columns": config.feature_engineering.numerical_columns,
+                "tfidf_max_features": config.feature_engineering.tfidf_max_features,
+                "ngram_range": config.feature_engineering.ngram_range,
+                "min_df": config.feature_engineering.min_df,
+                "max_df": config.feature_engineering.max_df,
+            }
+
         try:
             with open(metadata_file, "w") as f:
                 yaml.dump(processing_metadata, f, default_flow_style=False)
@@ -255,13 +318,109 @@ def preprocess_data(
         except Exception as e:
             logger.error(f"Error saving metadata: {e}")
 
+    # Upload processed data to ClearML Dataset (optional)
+    if CLEARML_AVAILABLE:
+        try:
+            logger.info("📦 Uploading processed data to ClearML Dataset...")
+
+            # Compute hash for versioning
+            with open(output_file, "rb") as f:
+                data_hash = hashlib.md5(
+                    f.to_csv(index=False).encode(), usedforsecurity=False
+                ).hexdigest()[:8]
+
+            # Try to find parent dataset (raw data)
+            parent_dataset = None
+            try:
+                datasets = Dataset.list_datasets(
+                    dataset_project="researchhub",
+                    dataset_name="ArXiv Raw Publications",
+                )
+                if datasets:
+                    parent_dataset = datasets[0]  # Get latest version
+            except (IndexError, KeyError):
+                parent_dataset = None  # No parent dataset found
+
+            # Create processed dataset
+            dataset = Dataset.create(
+                dataset_name="ResearchHub Publications",
+                dataset_project="researchhub",
+                dataset_version=f"1.0-{data_hash[:8]}",
+                parent_datasets=[parent_dataset] if parent_dataset else None,
+                description=f"Preprocessed ArXiv publications dataset. Processing date: {datetime.now().isoformat()}",
+            )
+
+            # Add processed file
+            dataset.add_files(path=output_file)
+            if metadata_file and Path(metadata_file).exists():
+                dataset.add_files(path=metadata_file)
+
+            # Add metadata
+            logger_ds = dataset.get_logger()
+
+            # Preview
+            logger_ds.report_table(
+                title="Processed Dataset Preview",
+                series="First 10 rows",
+                table_plot=df.head(10),
+                iteration=0,
+            )
+
+            # Statistics
+            stats = {
+                "original_rows": int(original_shape[0]),
+                "processed_rows": int(df.shape[0]),
+                "original_columns": int(original_shape[1]),
+                "processed_columns": int(df.shape[1]),
+                "rows_removed": int(original_shape[0] - df.shape[0]),
+                "data_hash": data_hash,
+            }
+
+            for key, value in stats.items():
+                if isinstance(value, (int, float)):
+                    logger_ds.report_single_value(name=key, value=value)
+
+            # Distribution of new categories
+            if "abstract_category" in df.columns:
+                cat_dist = df["abstract_category"].value_counts().to_dict()
+                logger_ds.report_histogram(
+                    title="Abstract Category Distribution",
+                    series="abstract_category",
+                    values=list(cat_dist.values()),
+                    xlabels=list(cat_dist.keys()),
+                    yaxis="Number of samples",
+                    iteration=0,
+                )
+
+            if "author_count_category" in df.columns:
+                auth_dist = df["author_count_category"].value_counts().to_dict()
+                logger_ds.report_histogram(
+                    title="Author Count Category Distribution",
+                    series="author_count_category",
+                    values=list(auth_dist.values()),
+                    xlabels=list(auth_dist.keys()),
+                    yaxis="Number of samples",
+                    iteration=1,
+                )
+
+            # Upload and finalize
+            dataset.upload()
+            dataset.finalize()
+
+            logger.info(f"✅ Processed dataset uploaded: {dataset.id}")
+            logger.info(f"   Version: 1.0-{data_hash[:8]}")
+
+        except Exception as e:
+            logger.warning(f"⚠️  Could not upload to ClearML: {e}")
+            logger.info("   Continuing without ClearML upload...")
+
     logger.info("Data preprocessing completed successfully!")
 
 
 def main():
     """Главная функция с парсингом аргументов командной строки."""
     parser = argparse.ArgumentParser(
-        description="Preprocess research publications data"
+        description="Preprocess research publications data with Pydantic validation"
     )
     parser.add_argument(
         "--input",
@@ -281,8 +440,17 @@ def main():
         default="data/processed/processing_metadata.yaml",
         help="Processing metadata output file",
     )
+    parser.add_argument(
+        "--params",
+        type=str,
+        default="params.yaml",
+        help="Parameters YAML file with Pydantic validation",
+    )
 
     args = parser.parse_args()
+
+    # Загружаем и валидируем параметры через Pydantic
+    config = load_params(args.params)
 
     # Создаем выходную директорию если она не существует
     output_path = Path(args.output)
@@ -292,8 +460,8 @@ def main():
         metadata_path = Path(args.metadata)
         metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Запускаем предобработку
-    preprocess_data(args.input, args.output, args.metadata)
+    # Запускаем предобработку с Pydantic конфигурацией
+    preprocess_data(args.input, args.output, args.metadata, config)
 
 
 if __name__ == "__main__":

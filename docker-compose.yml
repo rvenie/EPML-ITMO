@@ -1,7 +1,183 @@
-# Конфигурация Docker Compose для ML проекта с Poetry, DVC и MLflow
+# Конфигурация Docker Compose для ML проекта
+# Включает: MLflow (трекинг), ClearML (MLOps), Jupyter (разработка)
+#
+# Команды запуска:
+#   make clearml-server-up          # Запустить только ClearML
+#   make mlflow-server-up           # Запустить только MLflow
+#   make services-up                # Запустить все (MLflow + ClearML)
+#   docker-compose up jupyter-dev   # Jupyter (профиль development)
+#
+# Порты:
+#   - MLflow UI: http://localhost:3000
+#   - ClearML UI: http://localhost:8090
+#   - ClearML API: http://localhost:8008
+#   - ClearML Files: http://localhost:8091
+#
 version: "3.8"
 
 services:
+  # ========================================
+  # ClearML Server Infrastructure
+  # ========================================
+  
+  clearml-apiserver:
+    image: allegroai/clearml:1.16.2
+    container_name: clearml-apiserver
+    restart: unless-stopped
+    command: apiserver
+    environment:
+      CLEARML_API_HOST: "http://127.0.0.1:8008"
+      CLEARML_ELASTIC_SERVICE_HOST: clearml-elasticsearch
+      CLEARML_ELASTIC_SERVICE_PORT: 9200
+      CLEARML_MONGODB_SERVICE_HOST: clearml-mongo
+      CLEARML_MONGODB_SERVICE_PORT: 27017
+      CLEARML_REDIS_SERVICE_HOST: clearml-redis
+      CLEARML_REDIS_SERVICE_PORT: 6379
+      CLEARML_SERVER_DEPLOYMENT_TYPE: linux
+      # Fixed Users Mode для простоты
+      CLEARML__apiserver__auth__fixed_users__enabled: "true"
+      CLEARML__apiserver__auth__fixed_users__users: '[{"username": "admin", "password": "admin", "name": "Admin User"}]'
+      CLEARML__apiserver__auth__fixed_users__pass_hashed: "false"
+    ports:
+      - "8008:8008"
+    depends_on:
+      clearml-elasticsearch:
+        condition: service_healthy
+      clearml-mongo:
+        condition: service_healthy
+      clearml-redis:
+        condition: service_healthy
+    networks:
+      - ml-network
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/debug.ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  clearml-webserver:
+    image: allegroai/clearml:1.16.2
+    container_name: clearml-webserver
+    restart: unless-stopped
+    command: webserver
+    environment:
+      CLEARML_API_HOST: "http://clearml-apiserver:8008"
+    ports:
+      - "8090:80"
+    depends_on:
+      - clearml-apiserver
+    networks:
+      - ml-network
+    mem_limit: 256m
+
+  clearml-fileserver:
+    image: allegroai/clearml:1.16.2
+    container_name: clearml-fileserver
+    restart: unless-stopped
+    command: fileserver
+    environment:
+      CLEARML_API_HOST: "http://clearml-apiserver:8008"
+    ports:
+      - "8091:8081"
+    volumes:
+      - clearml-fileserver:/mnt/fileserver
+    networks:
+      - ml-network
+    mem_limit: 256m
+
+  clearml-elasticsearch:
+    image: elasticsearch:7.16.2
+    container_name: clearml-elasticsearch
+    restart: unless-stopped
+    environment:
+      - cluster.name=clearml
+      - discovery.type=single-node
+      - bootstrap.memory_lock=false
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+      - xpack.ml.enabled=false
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - cluster.routing.allocation.disk.watermark.low=10gb
+      - cluster.routing.allocation.disk.watermark.high=5gb
+      - cluster.routing.allocation.disk.watermark.flood_stage=2gb
+      - indices.memory.index_buffer_size=5%
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - clearml-elastic:/usr/share/elasticsearch/data
+    networks:
+      - ml-network
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  clearml-mongo:
+    image: mongo:4.4
+    container_name: clearml-mongo
+    restart: unless-stopped
+    command: --wiredTigerCacheSizeGB 0.5
+    volumes:
+      - clearml-mongo:/data/db
+    networks:
+      - ml-network
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  clearml-redis:
+    image: redis:6.0-alpine
+    container_name: clearml-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - clearml-redis:/data
+    networks:
+      - ml-network
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # Опционально: Agent для выполнения ClearML задач
+  clearml-agent:
+    image: allegroai/clearml-agent:latest
+    container_name: clearml-agent
+    restart: unless-stopped
+    environment:
+      CLEARML_API_HOST: "http://clearml-apiserver:8008"
+      CLEARML_WEB_HOST: "http://clearml-webserver:80"
+      CLEARML_FILES_HOST: "http://clearml-fileserver:8081"
+      CLEARML_API_ACCESS_KEY: ""
+      CLEARML_API_SECRET_KEY: ""
+      CLEARML_WORKER_ID: "default-worker"
+      CLEARML_WORKER_NAME: "default-worker"
+    depends_on:
+      - clearml-apiserver
+    networks:
+      - ml-network
+    mem_limit: 512m
+    profiles:
+      - with-agent
+
+  # ========================================
+  # MLflow и ML приложения
+  # ========================================
+  
   # MLflow сервер отслеживания
   mlflow-server:
     build:
@@ -140,9 +316,19 @@ networks:
     driver: bridge
 
 volumes:
+  # MLflow volumes
   mlruns-data:
   models-data:
   data-storage:
+  # ClearML volumes
+  clearml-elastic:
+    driver: local
+  clearml-mongo:
+    driver: local
+  clearml-redis:
+    driver: local
+  clearml-fileserver:
+    driver: local
 
 # Переопределение конфигураций для разных сред
 x-common-environment: &common-env

@@ -1,368 +1,463 @@
-# ДЗ 5: ClearML для MLOps
+# Отчёт по ДЗ 5: ClearML для MLOps
 
-## 📋 Содержание
-1. [Быстрый старт](#-быстрый-старт)
-2. [Настройка ClearML](#-1-настройка-clearml)
-3. [Трекинг экспериментов](#-2-трекинг-экспериментов)
-4. [Управление моделями](#-3-управление-моделями)
-5. [Пайплайны](#-4-пайплайны)
+## 🚀 Быстрая проверка
 
----
-
-## Воспроизводимость
-
-### Шаг 1: Установка и запуск сервера
 ```bash
+# 1) Клонируем и устанавливаем зависимости
+git clone <your-repo>
+cd research_agets_hub
 poetry install
-make clearml-server
+
+# 2) Запускаем ClearML Server
+make clearml-server-up
+# Ожидаем 1-2 минуты пока все сервисы станут healthy
+
+# 3) Проверяем статус
+make clearml-status
+# Должно быть 6 контейнеров: apiserver, webserver, fileserver, elastic, mongo, redis
+
+# 4) Настраиваем credentials
+# Открываем http://localhost:8090
+# Login: admin / admin
+# Settings → Workspace → Create new credentials
+# Копируем ключи и запускаем:
+poetry run clearml-init
+# Вводим:
+# - API Host: http://localhost:8008
+# - Web Host: http://localhost:8090
+# - Files Host: http://localhost:8091
+# - Access Key: (из UI)
+# - Secret Key: (из UI)
+
+# 5) Запускаем полный пайплайн (DVC + ClearML)
+make pipeline
+# или
+poetry run dvc repro --force
+# или
+dvc repro --force
+
+# 6) Проверяем результаты в UI
+# http://localhost:8090 → Projects → researchhub
+# - DATASETS: ArXiv Raw Publications, ResearchHub Publications
+# - EXPERIMENTS: train_RandomForestClassifier, train_SVM, train_LogisticRegression
+# - MODELS: зарегистрированные модели
+
+# 7) Остановка
+make clearml-server-down
 ```
-Подождать 1-2 минуты пока сервер запустится.
 
-### Шаг 2: Настройка credentials (обязательно!)
-1. Открыть http://localhost:8080/login
-2. При первом входе создать аккаунт (любой email/пароль)
-3. Перейти в **Settings** (иконка шестерёнки справа вверху)
-4. Выбрать **Workspace** → нажать **+ Create new credentials**
-5. Скопировать появившиеся `access_key` и `secret_key`
-
-### Шаг 3: Настройка SDK
-```bash
-
-# Запустить настройку
-clearml-init
-```
-При запросе ввести:
-- API Host: `http://localhost:8008`
-- Web Host: `http://localhost:8080`
-- File Host: `http://localhost:8081`
-- Access Key и Secret Key: из шага 2
-
-### Шаг 4: Запуск эксперимента
-```bash
-make clearml-test
-```
-
-### Шаг 5: Просмотр результатов
-Открыть http://localhost:8080 → **Projects** → **ResearchHub** → выбрать эксперимент
-
-### Остановка сервера
-```bash
-make clearml-stop
-```
-
+![docker](pics/docker.png)
 ---
 
-## 🔧 1. Настройка ClearML 
+## 📊 1. Настройка ClearML
 
-### 1.1 ClearML Server - Docker инфраструктура
+### 1.1 Установка и настройка ClearML Server
 
-**Файл конфигурации:** `clearml/config/docker-compose-clearml.yml`
+**Файл конфигурации:** `docker-compose.yml` (объединен с MLflow и другими сервисами)
 
-Инфраструктура ClearML развернута через Docker Compose и включает:
+ClearML Server развернут через Docker Compose с минимальной конфигурацией:
 
-| Сервис | Порт | Описание |
-|--------|------|----------|
-| `webserver` | 8080 | Веб-интерфейс ClearML |
-| `apiserver` | 8008 | REST API для SDK |
-| `fileserver` | 8081 | Хранение артефактов и моделей |
-| `elasticsearch` | 9200 | Поиск и индексирование |
-| `mongo` | 27017 | Основная база данных |
-| `redis` | 6379 | Кэширование и очереди |
+| Сервис | Порт | Описание | Memory Limit |
+|--------|------|----------|--------------|
+| apiserver | 8008 | REST API для SDK | 512MB |
+| webserver | 8090 | Web UI | 256MB |
+| fileserver | 8091 | Хранилище артефактов | 256MB |
+| elasticsearch | - | Индексирование | 768MB |
+| mongo | - | База данных | 1GB |
+| redis | - | Кэш и очереди | 512MB |
 
 **Команды управления:**
 ```bash
-# Запуск сервера
-make clearml-server
-
-# Остановка сервера
-make clearml-stop
-
-# Просмотр логов (в директории clearml/config)
-cd clearml/config && docker-compose -f docker-compose-clearml.yml logs
+make clearml-server-up    # Запуск
+make clearml-status       # Проверка статуса
+make clearml-server-down  # Остановка
 ```
 
 ### 1.2 База данных и хранилище
 
-- **MongoDB** - хранение метаданных экспериментов, задач и моделей
-- **Elasticsearch** - полнотекстовый поиск и индексирование
-- **Redis** - кэширование и управление очередями
-- **FileServer** - хранение артефактов, моделей и логов
+**Volumes (persistent storage):**
+- `clearml-elastic` - данные Elasticsearch
+- `clearml-mongo` - данные MongoDB
+- `clearml-redis` - данные Redis
+- `clearml-fileserver` - артефакты, модели, логи
 
-Данные сохраняются в volumes:
-```
-clearml/config/clearml_data/
-├── elastic/     # Elasticsearch данные
-├── mongo/       # MongoDB данные
-├── redis/       # Redis данные
-└── fileserver/  # Артефакты и модели
-```
+**Все данные сохраняются между перезапусками** благодаря Docker volumes.
 
 ### 1.3 Создание проекта
 
-Проект "ResearchHub" создается автоматически при первом эксперименте:
+Проект создается автоматически при первом запуске:
 
+**В train_model.py:**
 ```python
-from clearml import Task
-
 task = Task.init(
-    project_name="ResearchHub",
-    task_name="My Experiment",
-    task_type=Task.TaskTypes.training
+    project_name="researchhub",
+    task_name=f"train_{config.train.algorithm}",
+    task_type=Task.TaskTypes.training,
 )
 ```
 
+
 ### 1.4 Аутентификация
 
-**Конфигурация:** `clearml/config/clearml.conf` и `~/clearml.conf`
+**Fixed Users Mode** (в docker-compose.yml):
+```yaml
+CLEARML__apiserver__auth__fixed_users__enabled: "true"
+CLEARML__apiserver__auth__fixed_users__users: '[{"username": "admin", "password": "admin"}]'
+```
 
-**Настройка учетных данных:**
-1. Открыть http://localhost:8080
-2. Создать аккаунт при первом входе
+**Получение API credentials:**
+1. Открыть http://localhost:8090
+2. Login: `admin` / `admin`
+3. Settings → Workspace → Create new credentials
+4. Скопировать Access Key и Secret Key
+5. Запустить `poetry run clearml-init`
+
+**Файл конфигурации:** `~/clearml.conf` (создается автоматически)
 
 ---
 
-## 📊 2. Трекинг экспериментов 
+## 📈 2. Трекинг экспериментов
 
 ### 2.1 Автоматическое логирование
 
-**Файл:** `clearml/pipelines/ml_pipeline.py`
+**Интеграция в существующие скрипты:**
 
+#### fetch_arxiv_data.py
 ```python
-class ClearMLExperimentTracker:
-    def init_experiment(self, experiment_params):
-        self.task = Task.init(
-            project_name=self.project_name,
-            task_name=f"ML Training_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            task_type=Task.TaskTypes.training,
-            auto_connect_frameworks=True,  # Автоматическое логирование sklearn, etc.
-        )
-        
-        # Логирование параметров
-        for param_name, param_value in experiment_params.items():
-            self.task.set_parameter(param_name, param_value)
-        
-        return self.task
+# Автоматическая загрузка сырых данных в ClearML Dataset
+dataset = Dataset.create(
+    dataset_name="ArXiv Raw Publications",
+    dataset_project="researchhub",
+    dataset_version=f"1.0-{data_hash[:8]}",
+)
+dataset.add_files(path=csv_path)
+dataset.upload()
+dataset.finalize()
 ```
+
+#### preprocess_data.py
+```python
+# Создание версии обработанных данных с метаданными
+dataset = Dataset.create(
+    dataset_name="ResearchHub Publications",
+    dataset_project="researchhub",
+    dataset_version=f"1.0-{data_hash[:8]}",
+    parent_datasets=[parent_dataset],  # Связь с сырыми данными
+)
+# Логирование preview, гистограмм, статистики
+```
+
+#### train_model.py
+```python
+# Автоматическое логирование через ClearML SDK
+task = Task.init(
+    project_name="researchhub",
+    task_name=f"train_{algorithm}",
+    auto_connect_frameworks=True,  # Автологирование sklearn, pandas
+)
+# Логирование метрик, confusion matrix, feature importance
+```
+
+**Автоматически логируется:**
+- Параметры модели (через `Task.connect()`)
+- Метрики (через `logger.report_scalar()`)
+- Артефакты (модели, метрики, метаданные)
+- Git commit, branch, dirty status
+- Версии библиотек (requirements)
+- Системная информация
+
+![clearml_experiments_tab](pics/clearml_experiments_tab.png)
 
 
 ### 2.2 Система сравнения экспериментов
 
-В веб-интерфейсе ClearML (http://localhost:8080):
-- **Projects → ResearchHub → Experiments** - список всех экспериментов
-- Выбрать несколько экспериментов → Compare - сравнение метрик
-- Scalars - графики метрик по итерациям
-- Parallel Coordinates - анализ влияния параметров
+**В Web UI (http://localhost:8090):**
 
-![Clearml](pics/clearml1.png)
-### 2.3 Логирование метрик
+1. **Projects → researchhub → Experiments**
+   - Список всех training tasks
+   - Фильтрация по тегам, алгоритму, метрикам
 
+2. **Compare experiments:**
+   - Выбрать несколько tasks (например, все модели)
+   - Кнопка "Compare" → таблица с метриками
+   - Parallel Coordinates для анализа гиперпараметров
+
+3. **Scalars tab:**
+   - Графики accuracy, f1_score (train vs test)
+   - Overfitting check (train-test-gap)
+   - Cross-validation scores
+
+![clearml_exp](pics/clearml_exp.png)
+
+
+### 2.3 Логирование метрик и параметров
+
+**В train_model.py логируются:**
+
+**Метрики:**
+- `accuracy/train` - точность на train
+- `accuracy/test` - точность на test
+- `f1_score/train`, `f1_score/test`
+- `precision/test`, `recall/test`
+- `overfitting/train-test-gap` - проверка переобучения
+- `Cross Validation/Mean Score`, `Cross Validation/Std Score`
+
+**Параметры:**
+- Все гиперпараметры модели (через `task.connect()`)
+- Параметры предобработки (feature engineering)
+- Dataset statistics (train/test samples, features, classes)
+
+**Теги:**
+- `stage:training`
+- `model:RandomForestClassifier` / `model:SVM` / `model:LogisticRegression`
+- `source:train_model.py`
+- `test_accuracy:0.450`
+- `mlflow_experiment:<name>`
+
+### 2.4 Дашборды для анализа
+
+**Встроенные дашборды ClearML UI:**
+
+![clearml_scalars](pics/clearml_scalars.png)
+![clearml_plots](pics/clearml_plots.png)
+
+
+---
+
+## 🤖 3. Управление моделями
+
+### 3.1 Регистрация и версионирование моделей
+
+**В train_model.py:**
 ```python
-def log_training_metrics(self, metrics, epoch=0):
-    logger = self.task.get_logger()
-    for metric_name, metric_value in metrics.items():
-        logger.report_scalar("Training Metrics", metric_name, metric_value, epoch)
+from clearml import OutputModel
+
+output_model = OutputModel(
+    task=task,
+    framework="scikit-learn",
+    name=f"{algorithm}_model",
+)
+
+# Загрузка весов
+output_model.update_weights(
+    weights_filename=model_output,
+    auto_delete_file=False,
+)
+
+# Добавление метаданных
+output_model.update_design(
+    config_dict={
+        "test_accuracy": test_metrics.get("accuracy", 0),
+        "test_f1_score": test_metrics.get("f1_score", 0),
+        "cv_mean": float(cv_scores.mean()),
+        "training_samples": int(X_train.shape[0]),
+        # ... другие метаданные
+    }
+)
+
+# Публикация
+output_model.publish()
 ```
 
-Логируемые метрики:
-- `accuracy` - точность классификации
-- `f1_score` - F1-мера
-- `train_samples` - размер обучающей выборки
-- `training_time` - время обучения
+**Каждый запуск создает новую версию модели** с уникальным ID.
 
-### 2.4 Дашборды
 
-Встроенные дашборды в ClearML:
-- **Scalars** - графики метрик
-- **Plots** - пользовательские визуализации
-- **Debug Samples** - примеры данных
-- **Artifacts** - загруженные файлы
-- **Console** - логи выполнения в реальном времени
+### 3.2 Система метаданных для моделей
 
-![Clearml](pics/clearml2.png)
+**Автоматически сохраняются:**
+- Алгоритм (algorithm)
+- Метрики производительности (accuracy, F1, precision, recall)
+- Cross-validation scores (mean, std)
+- Гиперпараметры модели
+- Dataset информация (samples, features, classes)
+- Training date
+- MLflow run ID (для связи с MLflow)
+- Data version (hash или tag)
+
+**Доступ через:**
+- Task parameters (конфигурация)
+- Model metadata (через `update_design()`)
+- Артефакты (metrics.json, metadata.yaml)
+
+### 3.3 Автоматическое создание версий
+
+**Каждый запуск `train_model.py` создает:**
+- Новый ClearML Task (с уникальным ID)
+- Новую версию модели в Model Registry
+- Версионированные артефакты
+
+**История версий:**
+- Все версии доступны в UI (MODELS tab)
+- Можно сравнить производительность разных версий
+- Легко откатиться к предыдущей версии
+
+### 3.4 Система сравнения моделей
+
+**В UI:**
+1. **MODELS tab** → Выбрать несколько моделей → Compare
+2. **EXPERIMENTS tab** → Выбрать tasks → Compare
+
+**Сравниваются:**
+- Метрики (accuracy, F1, precision, recall)
+- Гиперпараметры
+- Dataset версии
+- Training time
+
+**Автоматическое сравнение в коде:**
+- Все метрики логируются с одинаковыми именами
+- Можно фильтровать по тегам (`model:RandomForestClassifier`)
+- Сортировать по `test_accuracy` тегу
+
+
+![clearml_diff_scalars](pics/clearml_diff_scalars.png)
 
 
 ---
 
-## 🤖 3. Управление моделями 
+## ⚙️ 4. Пайплайны
 
-### 3.1 Регистрация и версионирование
+### 4.1 ClearML Pipeline для ML Workflow
 
-**Файл:** `clearml/pipelines/ml_pipeline.py`
+**Два варианта пайплайна:**
 
-```python
-from clearml import Model
+#### Вариант 1: Запуск с DVC  
 
-def register_model(self, model_data, model_path, model_metadata):
-    # Сохранение модели
-    with open(model_path, "wb") as f:
-        pickle.dump(model_data, f)
-    
-    # Регистрация в ClearML Model Registry
-    self.model = Model(
-        name=f"research_classifier_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-        project=self.project_name,
-        task=self.task,
-        framework="scikit-learn"
-    )
-    
-    # Загрузка весов модели
-    self.model.update_weights(weights_filename=model_path)
-    
-    # Публикация
-    self.model.publish()
+**Файл:** `dvc.yaml`
+
+**Каждый этап автоматически:**
+- Логирует в ClearML Dataset (fetch, preprocess)
+- Создает ClearML Task (train)
+- Сохраняет результаты в DVC и MLflow
+
+**Запуск:**
+```bash
+make pipeline        # или dvc repro --force
 ```
 
-### 3.2 Метаданные моделей
+#### Вариант 2: Только ClearML
 
-```python
-model_metadata = {
-    "accuracy": test_metrics["accuracy"],
-    "f1_score": test_metrics["f1_score"],
-    "train_samples": len(X_train),
-    "test_samples": len(X_test),
-    "features": X.shape[1],
-    "training_date": datetime.now().isoformat(),
-}
+**Файл:** `scripts/clearml_pipeline_simple.py`
 
-# Сохранение метаданных в ClearML
-for key, value in model_metadata.items():
-    self.task.set_parameter(f"model_metadata/{key}", value)
+**Структура DAG (7 шагов):**
 ```
-
-### 3.3 Model Registry
-
-Просмотр зарегистрированных моделей:
-- **Web UI:** http://localhost:8080 → Models
-- Фильтрация по проекту, тегам, метрикам
-- История версий и сравнение моделей
-
-### 3.4 Сравнение моделей
-
-```python
-def compare_with_baseline(self, current_metrics, baseline_model_id):
-    baseline_model = Model(model_id=baseline_model_id)
-    baseline_task = Task.get_task(task_id=baseline_model.task)
-    baseline_accuracy = baseline_task.get_parameter("model_metadata/accuracy")
-    
-    improvement = current_metrics["accuracy"] - float(baseline_accuracy)
-    self.task.get_logger().report_scalar(
-        "Model Comparison", "accuracy_improvement", improvement
-    )
+step_load_data (загрузка из ClearML Dataset или локально)
+      ↓
+┌─────┴─────┬─────────┬─────────┐
+↓           ↓         ↓         ↓
+train_      train_    train_    train_
+LogisticReg RandomFor GradientB SVC
+└─────┬─────┴─────────┴─────────┘
+      ↓
+step_evaluate (сравнение и выбор лучшей)
+      ↓
+step_register (регистрация в Model Registry)
 ```
+- Есть сравнение моделей, но нет логирования в DVC\MLflow
+**Запуск:**
+```bash
+make clearml-pipeline
+```
+![clearml_pipelines](pics/clearml_pipelines.png)
+
+### 4.2 Автоматический запуск пайплайнов
+
+**DVC Pipeline:**
+- Запускается через `make pipeline` или `dvc repro --force`
+- Автоматически выполняется при изменении зависимостей
+- Поддерживает параллельное выполнение (train stages)
+
+**ClearML Pipeline:**
+- Запускается через `make clearml-pipeline`
+- Для production можно добавить ClearML Agent:
+  ```bash
+  docker-compose --profile with-agent up clearml-agent
+  ```
+- Тогда pipeline будет выполняться в очереди на agent
+
+### 4.3 Система мониторинга выполнения
+
+**В ClearML UI:**
+
+1. **EXPERIMENTS tab:**
+   - Список всех tasks с статусом (Running / Completed / Failed)
+   - Фильтрация по статусу, тегам, дате
+   - Console logs в реальном времени
+
+2. **PIPELINES tab** (для clearml_pipeline_simple.py):
+   - Визуальный DAG с состоянием каждого шага
+   - Время выполнения каждого шага
+   - Зависимости между шагами
+
+3. **Console output:**
+   - Логи каждого скрипта
+   - Print statements видны сразу
+   - Ошибки и warnings выделены
+
 
 ---
-
-## ⚙️ 4. Пайплайны 
-
-### 4.1 ML Workflow Pipeline
-
-**Файл:** `clearml/pipelines/ml_pipeline.py`
-
-```python
-class MLPipeline:
-    def run_training_experiment(self, input_file):
-        # 1. Загрузка данных
-        df = self._load_or_create_data(input_file)
-        
-        # 2. Предобработка
-        vectorizer = TfidfVectorizer(max_features=1000)
-        X = vectorizer.fit_transform(X_text).toarray()
-        
-        # 3. Обучение
-        model = RandomForestClassifier(n_estimators=100)
-        model.fit(X_train, y_train)
-        
-        # 4. Оценка
-        metrics = {"accuracy": accuracy_score(y_test, y_pred)}
-        self.experiment_tracker.log_training_metrics(metrics)
-        
-        # 5. Регистрация модели
-        self.experiment_tracker.register_model(model_data, model_path, metadata)
-        
-        return {"task_id": task.id, "model_id": model.id, "metrics": metrics}
-```
-
-### 4.2 Автоматический запуск (Scheduler)
-
-**Файл:** `clearml/pipelines/pipeline_scheduler.py`
-
-```python
-class PipelineScheduler:
-    def should_start_pipeline(self):
-        interval = timedelta(hours=self.config["schedule"]["interval_hours"])
-        return datetime.now() - last_run >= interval
-    
-    def start_pipeline(self):
-        pipeline = MLPipeline(self.project_name)
-        result = pipeline.run_training_experiment()
-        return result["task_id"]
-```
-
-### 4.3 Мониторинг
-
-**Файл:** `clearml/pipelines/pipeline_monitor.py`
-
-```python
-class ClearMLMonitor:
-    def check_servers_health(self):
-        for server_name, server_url in self.servers.items():
-            response = requests.get(f"{server_url}/debug.ping", timeout=10)
-            health_status[server_name] = response.status_code == 200
-        return health_status
-    
-    def get_pipeline_statistics(self):
-        tasks = Task.get_tasks(project_name=self.project_name)
-        # Подсчет completed, failed, running
-        return stats
-```
-
-### 4.4 Уведомления
-
-Логирование событий в `pipeline_scheduler.py`:
-
-```python
-def _send_notification(self, title, message):
-    log_message = f"{title}: {message}"
-    logger.info(log_message)
-    # Можно расширить: email, Slack, Telegram
-```
-
-Типы уведомлений:
-- Запуск нового пайплайна
-- Успешное завершение
-- Ошибки выполнения
-- Превышение таймаута
-
----
-
 
 ## 📁 Структура файлов
 
 ```
-clearml/
-├── config/
-│   ├── docker-compose-clearml.yml  # Docker конфигурация
-│   ├── clearml.conf                # Конфигурация SDK
-│   └── scheduler_config.json       # Конфигурация планировщика
-├── experiments/
-│   ├── experiment_runner.py        # Запуск экспериментов
-│   ├── experiment_comparison.py    # Сравнение экспериментов
-│   └── clearml_dashboard.py        # Генерация дашбордов
-├── models/
-│   └── model_manager.py            # Управление моделями
-└── pipelines/
-    ├── ml_pipeline.py              # ML пайплайн с трекингом
-    ├── pipeline_scheduler.py       # Планировщик запусков
-    ├── pipeline_monitor.py         # Мониторинг системы
-    └── run_system.py               # Управление инфраструктурой
+research_agets_hub/
+├── docker-compose.yml            # Docker инфраструктура (MLflow + ClearML)
+├── dvc.yaml                       # DVC pipeline (fetch → preprocess → train)
+├── params.yaml                    # Параметры для всех этапов
+├── Makefile                       # Команды управления
+│
+├── scripts/
+│   ├── fetch_arxiv_data.py       # Загрузка данных + ClearML Dataset
+│   ├── preprocess_data.py        # Предобработка + ClearML Dataset версия
+│   ├── train_model.py            # Обучение + ClearML Task + Model Registry
+│   ├── clearml_pipeline_simple.py # ClearML Pipeline (7 шагов, альтернатива)
+│   └── upload_dataset.py         # Утилита для ручной загрузки датасета
+│
+├── researchhub/
+│   └── pipeline_config_simple.py # Pydantic конфигурация для pipeline
+│
+└── config/
+    └── pipeline_config.py        # Pydantic конфигурация (для train_model.py)
 ```
 
+---
+
+### Связь версий
+
+- Каждая версия имеет **parent dataset** (кроме первой)
+- Видна полная цепочка трансформаций данных
+- Легко откатиться к любой версии
+- Воспроизводимость гарантирована
+
+![clearml_datasets](pics/clearml_datasets.png)
 ---
 
 ## 🎯 Основные команды
 
 ```bash
-make clearml-server   # Запуск ClearML сервера
-make clearml-stop     # Остановка сервера
-make clearml-test     # Запуск ML эксперимента
+# Управление ClearML Server
+make clearml-server-up      # Запуск
+make clearml-status         # Проверка статуса
+make clearml-server-down    # Остановка
+make clearml-init           # Настройка credentials
+
+# Полный пайплайн (DVC + ClearML)
+make pipeline               
+
+# Отдельные этапы
+make fetch-data             # fetch_arxiv_data.py (с ClearML Dataset)
+make preprocess             # preprocess_data.py (с ClearML Dataset)
+make train                  # train_rf (с ClearML tracking)
+make train-all              # train_rf + train_svm + train_lr
+
+# ClearML Pipeline (альтернативный со сравнением модлей)
+make clearml-pipeline       
+
+# Данные
+make clearml-data-pipeline  # fetch → preprocess → upload в ClearML
+make clearml-upload-dataset # Ручная загрузка датасета
+
+# Очистка
+make clearml-clean          # Удалить все данные ClearML (ВНИМАНИЕ!)
 ```
+
+---

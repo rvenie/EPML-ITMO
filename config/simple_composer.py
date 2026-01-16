@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 """
 Простая система композиции конфигураций для разных алгоритмов ML.
-Генерирует конфигурации без сложных зависимостей.
+Генерирует конфигурации с валидацией через Pydantic.
 """
 
+import sys
 from pathlib import Path
 
-import yaml
+import yaml  # type: ignore[import-untyped]
+
+# Добавляем корневую директорию в путь для импорта
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Импортируем только PipelineConfig для валидации
+from config.pipeline_config import PipelineConfig
 
 # Базовые конфигурации для разных алгоритмов
 ALGORITHM_CONFIGS = {
@@ -147,17 +154,21 @@ def compose_config(algorithm, data_size="medium", base_config_path="params.yaml"
 
 
 def validate_config(config):
-    """Простая валидация конфигурации"""
-    required_sections = ["data", "train", "mlflow"]
+    """
+    Валидация конфигурации через Pydantic модели
 
-    for section in required_sections:
-        if section not in config:
-            return False, f"Отсутствует секция: {section}"
+    Args:
+        config: Словарь с конфигурацией
 
-    if "algorithm" not in config["train"]:
-        return False, "Не указан алгоритм в секции train"
-
-    return True, "Конфигурация валидна"
+    Returns:
+        tuple: (bool, str) - статус валидации и сообщение
+    """
+    try:
+        # Используем Pydantic для валидации
+        PipelineConfig(**config)
+        return True, "Конфигурация валидна (проверено Pydantic)"
+    except Exception as e:
+        return False, f"Ошибка валидации Pydantic: {str(e)}"
 
 
 def save_config(config, output_path):
