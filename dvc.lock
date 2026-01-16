@@ -1,13 +1,13 @@
 schema: '2.0'
 stages:
   fetch_data:
-    cmd: python scripts/fetch_arxiv_data.py --query "cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM
-      OR cat:cs.LG" --max-results 100 --output-dir data/raw
+    cmd: python scripts/fetch_arxiv_data.py --query "cat:eess.IV OR cat:cs.CV OR
+      cat:q-bio.QM OR cat:cs.LG" --max-results 100 --output-dir data/raw
     deps:
     - path: scripts/fetch_arxiv_data.py
       hash: md5
-      md5: f8f702789871bda59a32d483df30a600
-      size: 13353
+      md5: 9b5d563dc64e99141899e3cf9ea72bc3
+      size: 15921
     params:
       params.yaml:
         data.max_results: 100
@@ -15,28 +15,29 @@ stages:
     outs:
     - path: data/raw/arxiv_metadata.yaml
       hash: md5
-      md5: 1316c0d18a01216dc83244d80e225db1
-      size: 1393
+      md5: 122f4d00b47b54d1466c5b9d0eb9779d
+      size: 1397
     - path: data/raw/arxiv_publications.csv
       hash: md5
-      md5: 1e3dccb6e07eb1de7d77e6b3671283d9
-      size: 169702
+      md5: f31e62c8234520e29a6d7beb99c0abe0
+      size: 172982
   preprocess:
-    cmd: python scripts/preprocess_data.py --input data/raw/arxiv_publications.csv
-      --output data/processed/publications_processed.csv --params params.yaml
+    cmd: python scripts/preprocess_data.py --input 
+      data/raw/arxiv_publications.csv --output 
+      data/processed/publications_processed.csv --params params.yaml
     deps:
     - path: data/raw/arxiv_metadata.yaml
       hash: md5
-      md5: 1316c0d18a01216dc83244d80e225db1
-      size: 1393
+      md5: 122f4d00b47b54d1466c5b9d0eb9779d
+      size: 1397
     - path: data/raw/arxiv_publications.csv
       hash: md5
-      md5: 1e3dccb6e07eb1de7d77e6b3671283d9
-      size: 169702
+      md5: f31e62c8234520e29a6d7beb99c0abe0
+      size: 172982
     - path: scripts/preprocess_data.py
       hash: md5
-      md5: d60eec16158e16d84998fc736a471c70
-      size: 12679
+      md5: 3b17029a26f53aacc11ac05e49c9700b
+      size: 16791
     params:
       params.yaml:
         feature_engineering.categorical_columns:
@@ -62,29 +63,30 @@ stages:
     outs:
     - path: data/processed/processing_metadata.yaml
       hash: md5
-      md5: 7b0275d98640b9ff91387fe2e7d77dba
+      md5: d206e8890d46abc91c11be95ebfbb170
       size: 1087
     - path: data/processed/publications_processed.csv
       hash: md5
-      md5: fc45327f1df7e09a650d6bd9789be33d
-      size: 313648
+      md5: 0857262ff1eaa5dcd682629c8f000447
+      size: 319401
   train_rf:
-    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv
-      --model-output models/rf_classifier.pkl --metrics models/rf_metrics.json --algorithm
+    cmd: python scripts/train_model.py --input 
+      data/processed/publications_processed.csv --model-output 
+      models/rf_classifier.pkl --metrics models/rf_metrics.json --algorithm 
       RandomForestClassifier
     deps:
     - path: data/processed/processing_metadata.yaml
       hash: md5
-      md5: 7b0275d98640b9ff91387fe2e7d77dba
+      md5: d206e8890d46abc91c11be95ebfbb170
       size: 1087
     - path: data/processed/publications_processed.csv
       hash: md5
-      md5: fc45327f1df7e09a650d6bd9789be33d
-      size: 313648
+      md5: 0857262ff1eaa5dcd682629c8f000447
+      size: 319401
     - path: scripts/train_model.py
       hash: md5
-      md5: 1d4592100bd9a9fa3ecc7ee79651175f
-      size: 17844
+      md5: bd8dd16cd95dc86ee26b5a2e734d929a
+      size: 26049
     params:
       params.yaml:
         mlflow.experiment_name: arxiv_publications_classification
@@ -102,33 +104,34 @@ stages:
     outs:
     - path: models/rf_classifier.pkl
       hash: md5
-      md5: 985de0450b62d2431178bb6a470cdcfd
-      size: 2094601
+      md5: 7593e3985daf7902ac9b5480837d11f2
+      size: 2667321
     - path: models/rf_classifier_metadata.yaml
       hash: md5
-      md5: e3a80df8a333a258308c2330853772c0
-      size: 1121
+      md5: c6eec49f136dad49b6c8ffc98831ec52
+      size: 1122
     - path: models/rf_metrics.json
       hash: md5
-      md5: b9b07f63cc2758a624ccdef57acff829
-      size: 491
+      md5: b48840af9126e82ab164657a5c4279e3
+      size: 518
   train_svm:
-    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv
-      --model-output models/svm_classifier.pkl --metrics models/svm_metrics.json --algorithm
+    cmd: python scripts/train_model.py --input 
+      data/processed/publications_processed.csv --model-output 
+      models/svm_classifier.pkl --metrics models/svm_metrics.json --algorithm 
       SVM
     deps:
     - path: data/processed/processing_metadata.yaml
       hash: md5
-      md5: 7b0275d98640b9ff91387fe2e7d77dba
+      md5: d206e8890d46abc91c11be95ebfbb170
       size: 1087
     - path: data/processed/publications_processed.csv
       hash: md5
-      md5: fc45327f1df7e09a650d6bd9789be33d
-      size: 313648
+      md5: 0857262ff1eaa5dcd682629c8f000447
+      size: 319401
     - path: scripts/train_model.py
       hash: md5
-      md5: 1d4592100bd9a9fa3ecc7ee79651175f
-      size: 17844
+      md5: bd8dd16cd95dc86ee26b5a2e734d929a
+      size: 26049
     params:
       params.yaml:
         mlflow.experiment_name: arxiv_publications_classification
@@ -143,24 +146,25 @@ stages:
     outs:
     - path: models/svm_classifier.pkl
       hash: md5
-      md5: 0dedf03036364dedb7f2412bf7927de6
-      size: 1377104
+      md5: 00ad229862f35a95eab697b7de9614b7
+      size: 1452720
     - path: models/svm_classifier_metadata.yaml
       hash: md5
-      md5: 31accdca9a6e6c1dc31451c0e38ae724
+      md5: 93115168c4e899c1396149d8fb64a02f
       size: 1097
     - path: models/svm_metrics.json
       hash: md5
-      md5: 08b023248134a4cb97734770db0a5ef1
-      size: 511
+      md5: 9090f46035bb4d751972790233dcd524
+      size: 501
   train_lr:
-    cmd: python scripts/train_model.py --input data/processed/publications_processed.csv
-      --model-output models/lr_classifier.pkl --metrics models/lr_metrics.json --algorithm
+    cmd: python scripts/train_model.py --input 
+      data/processed/publications_processed.csv --model-output 
+      models/lr_classifier.pkl --metrics models/lr_metrics.json --algorithm 
       LogisticRegression
     deps:
     - path: data/processed/processing_metadata.yaml
       hash: md5
-      md5: 7b0275d98640b9ff91387fe2e7d77dba
+      md5: 71f0ae32b20003163324ab5a6dc9a65d
       size: 1087
     - path: data/processed/publications_processed.csv
       hash: md5
@@ -168,8 +172,8 @@ stages:
       size: 313648
     - path: scripts/train_model.py
       hash: md5
-      md5: 1d4592100bd9a9fa3ecc7ee79651175f
-      size: 17844
+      md5: bd8dd16cd95dc86ee26b5a2e734d929a
+      size: 26049
     params:
       params.yaml:
         mlflow.experiment_name: arxiv_publications_classification
@@ -184,13 +188,13 @@ stages:
     outs:
     - path: models/lr_classifier.pkl
       hash: md5
-      md5: cbac744692f8841c764b70f239f8eaf4
+      md5: c25517e0517765b3c3845ab4b11a6f26
       size: 613047
     - path: models/lr_classifier_metadata.yaml
       hash: md5
-      md5: 9f7dd0307484b47356f8908c0eaec5ef
+      md5: b7ff37e7afc474a696fafb6ef689befa
       size: 1126
     - path: models/lr_metrics.json
       hash: md5
-      md5: d8ef34822733571d3aefba2740d0a45a
+      md5: 0cb1b501716da59c4be744cffbb448fb
       size: 525

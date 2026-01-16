@@ -8,7 +8,7 @@
 import argparse
 import json
 import logging
-import pickle  # nosec
+import pickle  # nosec B403
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -25,8 +25,6 @@ import yaml  # type: ignore
 
 # ClearML
 from clearml import Task
-
-sys.path.append(str(Path(__file__).parent.parent / "clearml" / "experiments"))
 from mlflow.models.signature import infer_signature
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -42,11 +40,6 @@ from sklearn.metrics import (
 # ML библиотеки
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.svm import SVC
-from tracking_utils import ClearMLAutoLogger
-
-# Добавляем путь к модулю моделей
-sys.path.append(str(Path(__file__).parent.parent / "clearml" / "models"))
-from model_manager import ClearMLModelManager
 
 # Импорт Pydantic моделей для валидации
 from config.pipeline_config import PipelineConfig, load_config
@@ -245,21 +238,27 @@ def train_model(
         config.train.algorithm = algorithm
         logger.info(f"✏️ Algorithm overridden from command line: {algorithm}")
 
-    # Инициализация ClearML Task
+    # Инициализация ClearML Task с информативными тегами
     task = Task.init(
-        project_name="ResearchHub",
-        task_name=f"Model Training - {config.train.algorithm}",
+        project_name="researchhub",
+        task_name=f"train_{config.train.algorithm}",
         task_type=Task.TaskTypes.training,
+        auto_connect_frameworks=True,  # Автологирование sklearn, pandas
+    )
+
+    # Добавляем информативные теги
+    task.add_tags(
+        [
+            "stage:training",
+            f"model:{config.train.algorithm}",
+            "source:train_model.py",
+            "task_type:classification",
+            f"mlflow_experiment:{config.mlflow.experiment_name}",
+        ]
     )
 
     # Получаем ClearML логгер
     clearml_logger = task.get_logger()
-
-    # Инициализируем автоматический логгер
-    auto_logger = ClearMLAutoLogger(task)
-
-    # Инициализируем менеджер моделей
-    model_manager = ClearMLModelManager(config.mlflow.experiment_name)
 
     # Настройка MLflow через Pydantic config
     mlflow.set_tracking_uri(config.mlflow.tracking_uri)
@@ -316,9 +315,6 @@ def train_model(
         logger.info("Creating features...")
         X, y, tfidf = create_features(df, config)  # noqa: N806
 
-        # Логируем системную информацию
-        auto_logger.log_system_info()
-
         # Разделяем данные по параметрам из Pydantic
         X_train, X_test, y_train, y_test = train_test_split(  # noqa: N806
             X,
@@ -330,16 +326,38 @@ def train_model(
         logger.info(f"Training set size: {X_train.shape}")
         logger.info(f"Test set size: {X_test.shape}")
 
+        # Логируем информацию о датасетах в ClearML
+        train_info = {
+            "samples": int(X_train.shape[0]),
+            "features": int(X_train.shape[1]),
+            "classes": len(np.unique(y_train)),
+        }
+        test_info = {
+            "samples": int(X_test.shape[0]),
+            "features": int(X_test.shape[1]),
+            "classes": len(np.unique(y_test)),
+        }
+        task.connect(train_info, name="dataset_train")
+        task.connect(test_info, name="dataset_test")
+
+        # Логируем распределение классов
+        train_dist = pd.Series(y_train).value_counts().to_dict()
+        test_dist = pd.Series(y_test).value_counts().to_dict()
+        for cls, count in train_dist.items():
+            clearml_logger.report_scalar(
+                "Dataset Train", f"class_{cls}_count", count, 0
+            )
+        for cls, count in test_dist.items():
+            clearml_logger.report_scalar("Dataset Test", f"class_{cls}_count", count, 0)
+
         # Инициализируем и обучаем модель используя Pydantic config
         logger.info(f"Training {config.train.algorithm} model...")
         model = get_model(config.train.algorithm, config)
 
         # Логируем параметры модели
-        auto_logger.log_model_params(model)
-
-        # Логируем информацию о датасетах
-        auto_logger.log_dataset_info(X_train, y_train, "train")
-        auto_logger.log_dataset_info(X_test, y_test, "test")
+        if hasattr(model, "get_params"):
+            model_params = model.get_params()
+            task.connect(model_params, name="model_params")
 
         model.fit(X_train, y_train)
 
@@ -364,23 +382,88 @@ def train_model(
         logger.info("Evaluating model on test set...")
         test_metrics = evaluate_model(model, X_test, y_test)
 
-        # Используем автологгер для создания визуализаций
+        # Предсказания и визуализации
         y_pred = model.predict(X_test)
 
-        # Получаем названия признаков и классов если возможно
-        feature_names = None
+        # Получаем названия классов если возможно
         class_names = None
         if hasattr(model, "classes_"):
             class_names = [str(c) for c in model.classes_]
 
-        # Логируем confusion matrix и classification report
-        auto_logger.log_confusion_matrix(y_test, y_pred, class_names)
-        auto_logger.log_classification_report(y_test, y_pred, class_names)
+        # Логируем confusion matrix
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        from sklearn.metrics import confusion_matrix
 
-        # Логируем важность признаков
-        auto_logger.log_feature_importance(model, feature_names)
+        cm = confusion_matrix(y_test, y_pred)
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt="d",
+            cmap="Blues",
+            xticklabels=class_names,
+            yticklabels=class_names,
+        )
+        plt.title("Confusion Matrix")
+        plt.ylabel("True Label")
+        plt.xlabel("Predicted Label")
+        clearml_logger.report_matplotlib_figure(
+            title="Confusion Matrix",
+            series="confusion_matrix",
+            figure=plt.gcf(),
+            iteration=0,
+        )
+        plt.close()
 
-        # Логируем метрики в ClearML
+        # Логируем важность признаков если доступно
+        if hasattr(model, "feature_importances_"):
+            importances = model.feature_importances_
+            top_n = min(20, len(importances))
+            indices = np.argsort(importances)[-top_n:]
+
+            plt.figure(figsize=(10, 8))
+            plt.barh(range(top_n), importances[indices])
+            plt.yticks(range(top_n), [f"Feature {i}" for i in indices])
+            plt.xlabel("Importance")
+            plt.title(f"Top {top_n} Feature Importances")
+            plt.tight_layout()
+            clearml_logger.report_matplotlib_figure(
+                title="Feature Importance",
+                series="top_features",
+                figure=plt.gcf(),
+                iteration=0,
+            )
+            plt.close()
+
+        # Логируем метрики в ClearML (train и test)
+        train_metrics = evaluate_model(model, X_train, y_train)
+
+        # Train metrics
+        for _metric_name, _metric_value in train_metrics.items():
+            clearml_logger.report_scalar(
+                "accuracy", "train", train_metrics.get("accuracy", 0), 0
+            )
+            clearml_logger.report_scalar(
+                "f1_score", "train", train_metrics.get("f1_score", 0), 0
+            )
+
+        # Test metrics
+        for _metric_name, _metric_value in test_metrics.items():
+            clearml_logger.report_scalar(
+                "accuracy", "test", test_metrics.get("accuracy", 0), 0
+            )
+            clearml_logger.report_scalar(
+                "f1_score", "test", test_metrics.get("f1_score", 0), 0
+            )
+            clearml_logger.report_scalar(
+                "precision", "test", test_metrics.get("precision", 0), 0
+            )
+            clearml_logger.report_scalar(
+                "recall", "test", test_metrics.get("recall", 0), 0
+            )
+
+        # Cross-validation
         clearml_logger.report_scalar(
             "Cross Validation", "Mean Score", cv_scores.mean(), iteration=0
         )
@@ -388,10 +471,12 @@ def train_model(
             "Cross Validation", "Std Score", cv_scores.std(), iteration=0
         )
 
-        for metric_name, metric_value in test_metrics.items():
-            clearml_logger.report_scalar(
-                "Test Metrics", metric_name, metric_value, iteration=0
-            )
+        # Overfitting check
+        overfitting = train_metrics.get("accuracy", 0) - test_metrics.get("accuracy", 0)
+        clearml_logger.report_scalar("overfitting", "train-test-gap", overfitting, 0)
+
+        # Добавляем accuracy в теги
+        task.add_tags([f"test_accuracy:{test_metrics.get('accuracy', 0):.3f}"])
 
         # Логируем метрики в MLflow
         mlflow.log_metric("cv_mean", cv_scores.mean())
@@ -508,43 +593,53 @@ def train_model(
         mlflow.log_artifact(metrics_output, "metrics")
         mlflow.log_artifact(metadata_file, "metadata")
 
-        # Создаем сводку эксперимента
-        experiment_summary = auto_logger.create_experiment_summary(test_metrics)
-
-        # Автоматическая регистрация модели в ClearML
+        # Регистрация модели в ClearML Model Registry
         try:
+            from clearml import OutputModel
+
             model_name = f"{config.train.algorithm}_model"
 
-            # Подготавливаем информацию о данных для регистрации
-            training_data_info = {
-                "training_samples": int(X_train.shape[0]),
-                "test_samples": int(X_test.shape[0]),
-                "features": int(X.shape[1]),
-                "classes": len(np.unique(y)),
-            }
-
-            # Регистрируем модель с полными метаданными
-            registered_model = model_manager.auto_register_from_training(
-                model_path=model_output,
-                model_name=model_name,
-                task_id=task.id,
-                training_metrics=test_metrics,
-                model_params=train_params_dict,
-                training_data_info=training_data_info,
+            # Создаем OutputModel
+            output_model = OutputModel(
+                task=task,
+                framework="scikit-learn",
+                name=model_name,
             )
 
-            logger.info(
-                f"Модель автоматически зарегистрирована: {registered_model.name}"
+            # Загружаем веса модели
+            output_model.update_weights(
+                weights_filename=model_output,
+                auto_delete_file=False,
             )
+
+            # Добавляем метаданные
+            output_model.update_design(
+                config_dict={
+                    "algorithm": config.train.algorithm,
+                    "test_accuracy": test_metrics.get("accuracy", 0),
+                    "test_f1_score": test_metrics.get("f1_score", 0),
+                    "cv_mean": float(cv_scores.mean()),
+                    "training_samples": int(X_train.shape[0]),
+                    "test_samples": int(X_test.shape[0]),
+                    "features": int(X.shape[1]),
+                    "classes": len(np.unique(y)),
+                    "training_date": datetime.now().isoformat(),
+                }
+            )
+
+            # Публикуем модель
+            output_model.publish()
+
+            logger.info(f"✅ Model registered in ClearML: {output_model.id}")
 
         except Exception as e:
-            logger.error(f"Ошибка регистрации модели: {e}")
+            logger.warning(f"⚠️  Could not register model in ClearML: {e}")
 
         logger.info("Training completed successfully!")
         logger.info(f"MLflow run ID: {mlflow.active_run().info.run_id}")
         logger.info(f"ClearML task ID: {task.id}")
         logger.info(
-            f"Experiment summary created: {experiment_summary.get('experiment_id', 'N/A')}"
+            f"ClearML results: http://localhost:8090/projects/researchhub/experiments/{task.id}"
         )
 
         return model, test_metrics

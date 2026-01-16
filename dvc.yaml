@@ -1,5 +1,15 @@
 # DVC Pipeline Configuration
 # Automated ML pipeline with ArXiv data fetching for reproducible research
+# 
+# ClearML Integration:
+# - fetch_arxiv_data.py: Automatically uploads raw data to ClearML Dataset
+# - preprocess_data.py: Creates processed dataset version in ClearML
+# - train_model.py: Tracks experiments in ClearML with metrics and artifacts
+# 
+# To use ClearML:
+# 1. Start ClearML server: make clearml-server-up
+# 2. Setup credentials: make clearml-init
+# 3. Run pipeline: make pipeline (ClearML integration is automatic)
 
 stages:
   # Stage 1: Fetch data from ArXiv API

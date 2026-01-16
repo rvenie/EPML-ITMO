@@ -12,6 +12,7 @@ Usage:
 
 import argparse
 import csv
+import hashlib
 import logging
 import sys
 import time
@@ -22,7 +23,18 @@ from urllib.parse import urlencode, urlparse
 from urllib.request import urlopen
 
 import defusedxml.ElementTree as ElementTree
+import pandas as pd
 import yaml  # type: ignore
+
+# ClearML Dataset
+try:
+    from clearml import Dataset
+
+    CLEARML_AVAILABLE = True
+except ImportError:
+    CLEARML_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning("ClearML not available. Dataset upload will be skipped.")
 
 # Configure logging
 logging.basicConfig(
@@ -378,6 +390,62 @@ def main():
         # Save data
         fetcher.save_to_csv(papers, args.csv_file)
         fetcher.save_metadata(args.query, papers, args.metadata_file)
+
+        # Upload to ClearML Dataset (optional)
+        if CLEARML_AVAILABLE:
+            try:
+                csv_path = Path(args.output_dir) / args.csv_file
+                metadata_path = Path(args.output_dir) / args.metadata_file
+
+                # Compute data hash for versioning
+                with open(csv_path, "rb") as f:
+                    data_hash = hashlib.md5(
+                        f.to_csv(index=False).encode(), usedforsecurity=False
+                    ).hexdigest()[:8]
+
+                logger.info("📦 Uploading to ClearML Dataset...")
+                dataset = Dataset.create(
+                    dataset_name="ArXiv Raw Publications",
+                    dataset_project="researchhub",
+                    dataset_version=f"1.0-{data_hash[:8]}",
+                    description=f"Raw ArXiv publications fetched with query: {args.query}",
+                )
+
+                # Add files
+                dataset.add_files(path=str(csv_path))
+                dataset.add_files(path=str(metadata_path))
+
+                # Add metadata
+                logger_ds = dataset.get_logger()
+                df = pd.read_csv(csv_path)
+                logger_ds.report_table(
+                    title="Dataset Preview",
+                    series="First 10 rows",
+                    table_plot=df.head(10),
+                    iteration=0,
+                )
+
+                # Statistics
+                stats = {
+                    "total_papers": len(papers),
+                    "query": args.query,
+                    "max_results": args.max_results,
+                    "data_hash": data_hash,
+                }
+                for key, value in stats.items():
+                    if isinstance(value, (int, float)):
+                        logger_ds.report_single_value(name=key, value=value)
+
+                # Upload and finalize
+                dataset.upload()
+                dataset.finalize()
+
+                logger.info(f"✅ Dataset uploaded: {dataset.id}")
+                logger.info(f"   Version: 1.0-{data_hash[:8]}")
+
+            except Exception as e:
+                logger.warning(f"⚠️  Could not upload to ClearML: {e}")
+                logger.info("   Continuing without ClearML upload...")
 
         logger.info("ArXiv data fetching completed successfully!")
         logger.info(f"Papers saved: {len(papers)}")
