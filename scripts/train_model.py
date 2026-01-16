@@ -25,6 +25,9 @@ import yaml  # type: ignore
 
 # ClearML
 from clearml import Task
+
+# Импорт Pydantic моделей для валидации
+from config.pipeline_config import PipelineConfig, load_config
 from mlflow.models.signature import infer_signature
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -40,9 +43,6 @@ from sklearn.metrics import (
 # ML библиотеки
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.svm import SVC
-
-# Импорт Pydantic моделей для валидации
-from config.pipeline_config import PipelineConfig, load_config
 
 # Настройка логирования
 logging.basicConfig(
