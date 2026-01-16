@@ -366,7 +366,7 @@ def _log_function_params(func: Callable, args: tuple, kwargs: dict):
         func_args = func.__code__.co_varnames[: func.__code__.co_argcount]
 
         # Логируем позиционные аргументы
-        for i, (arg_name, arg_value) in enumerate(zip(func_args, args, strict=False)):
+        for _i, (arg_name, arg_value) in enumerate(zip(func_args, args, strict=False)):
             if not arg_name.startswith("_"):  # Пропускаем приватные параметры
                 param_value = _serialize_param(arg_value)
                 if param_value is not None:
