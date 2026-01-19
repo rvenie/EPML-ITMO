@@ -1,6 +1,6 @@
 algorithm: LogisticRegression
 data_info:
-  features: 2080
+  features: 2150
   target_classes: 44
   test_samples: 20
   training_samples: 80
@@ -39,7 +39,7 @@ hyperparameters:
     C: 1.0
     max_iter: 1000
     penalty: l2
-    solver: liblinear
+    solver: lbfgs
   random_forest:
     bootstrap: true
     max_depth: 10
@@ -55,11 +55,11 @@ hyperparameters:
     kernel: rbf
     probability: true
   test_size: 0.2
-mlflow_run_id: 61e2312baeb64c4eb0b74c5042999140
+mlflow_run_id: adf980a36307485083d3b1efc0f131b7
 model_name: arxiv_publications_classification_model
 model_version: 1.0.0
 performance:
-  cv_accuracy: 0.3625
+  cv_accuracy: 0.175
   test_accuracy: 0.2
-  test_f1_score: 0.22222222222222224
-training_date: '2025-12-21T23:48:08.705018'
+  test_f1_score: 0.16969696969696968
+training_date: '2026-01-19T21:19:31.562230'

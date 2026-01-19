@@ -156,26 +156,29 @@ def log_model_metrics(
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            result = func(*args, **kwargs)
-
-            if not mlflow.active_run():
-                logger.warning("Нет активного MLflow run для логирования метрик")
+            # Если уже есть активный run, используем его, иначе создаём новый
+            if mlflow.active_run() is not None:
+                result = func(*args, **kwargs)
+                _log_metrics(result)
                 return result
+            else:
+                with mlflow.start_run():
+                    result = func(*args, **kwargs)
+                    _log_metrics(result)
+                    return result
 
+        def _log_metrics(result):
             # Если результат - словарь с метриками
             if isinstance(result, dict):
                 for key, value in result.items():
                     if metrics_to_log is None or key in metrics_to_log:
                         metric_name = f"{prefix}{key}" if prefix else key
-                        if isinstance(value, (int, float, np.number)):
+                        if isinstance(value, int | float | np.number):
                             mlflow.log_metric(metric_name, float(value))
-
             # Если результат - число (единственная метрика)
-            elif isinstance(result, (int, float, np.number)):
+            elif isinstance(result, int | float | np.number):
                 metric_name = f"{prefix}{func.__name__}" if prefix else func.__name__
                 mlflow.log_metric(metric_name, float(result))
-
-            return result
 
         return wrapper
 
@@ -202,13 +205,7 @@ def log_dataset_info(
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
-
-            if not mlflow.active_run():
-                return result
-
-            # Ищем DataFrame в результате или аргументах
             dataframes = []
-
             # Проверяем результат
             if isinstance(result, pd.DataFrame):
                 dataframes.append(("result", result))
@@ -216,18 +213,29 @@ def log_dataset_info(
                 for i, item in enumerate(result):
                     if isinstance(item, pd.DataFrame):
                         dataframes.append((f"result_{i}", item))
-
             # Проверяем аргументы
             for i, arg in enumerate(args):
                 if isinstance(arg, pd.DataFrame):
                     dataframes.append((f"arg_{i}", arg))
 
-            # Логируем информацию о каждом DataFrame
+            # Если есть активный MLflow run — логируем в MLflow, иначе только в логгер
             for name, df in dataframes:
-                _log_dataframe_info(
-                    df, name, log_shape, log_dtypes, log_missing, log_stats
-                )
-
+                if "mlflow" in globals() and mlflow.active_run() is not None:
+                    _log_dataframe_info(
+                        df, name, log_shape, log_dtypes, log_missing, log_stats
+                    )
+                else:
+                    # Логируем только в логгер
+                    info = {}
+                    if log_shape:
+                        info["shape"] = df.shape
+                    if log_dtypes:
+                        info["dtypes"] = df.dtypes.to_dict()
+                    if log_missing:
+                        info["missing"] = int(df.isnull().sum().sum())
+                    if log_stats:
+                        info["describe"] = df.describe(include="all").to_dict()
+                    logger.info(f"[log_dataset_info] {name}: {info}")
             return result
 
         return wrapper
@@ -246,12 +254,17 @@ def save_artifacts(*artifact_paths: str):
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            result = func(*args, **kwargs)
-
-            if not mlflow.active_run():
-                logger.warning("Нет активного MLflow run для сохранения артефактов")
+            if mlflow.active_run() is not None:
+                result = func(*args, **kwargs)
+                _log_artifacts()
                 return result
+            else:
+                with mlflow.start_run():
+                    result = func(*args, **kwargs)
+                    _log_artifacts()
+                    return result
 
+        def _log_artifacts():
             # Сохраняем указанные артефакты
             for path in artifact_paths:
                 path_obj = Path(path)
@@ -263,8 +276,6 @@ def save_artifacts(*artifact_paths: str):
                     logger.info(f"Сохранен артефакт: {path}")
                 else:
                     logger.warning(f"Артефакт не найден: {path}")
-
-            return result
 
         return wrapper
 
@@ -308,8 +319,8 @@ def handle_exceptions(
 
 def conditional_log(
     condition_func: Callable[..., bool],
-    log_on_true: dict[str, Any] = None,
-    log_on_false: dict[str, Any] = None,
+    log_on_true: dict[str, Any] | None = None,
+    log_on_false: dict[str, Any] | None = None,
 ):
     """
     Декоратор для условного логирования.
@@ -366,7 +377,7 @@ def _log_function_params(func: Callable, args: tuple, kwargs: dict):
         func_args = func.__code__.co_varnames[: func.__code__.co_argcount]
 
         # Логируем позиционные аргументы
-        for i, (arg_name, arg_value) in enumerate(zip(func_args, args, strict=False)):
+        for arg_name, arg_value in zip(func_args, args, strict=False):
             if not arg_name.startswith("_"):  # Пропускаем приватные параметры
                 param_value = _serialize_param(arg_value)
                 if param_value is not None:
@@ -387,9 +398,9 @@ def _serialize_param(value: Any) -> str | None:
     """Сериализует параметр для логирования."""
     if value is None:
         return "None"
-    elif isinstance(value, (str, int, float, bool)):
+    elif isinstance(value, str | int | float | bool):
         return str(value)
-    elif isinstance(value, (list, tuple)):
+    elif isinstance(value, list | tuple):
         if len(value) < 10:  # Логируем только короткие списки
             return str(value)
         else:
@@ -408,11 +419,11 @@ def _serialize_param(value: Any) -> str | None:
 def _log_metrics_from_dict(result_dict: dict):
     """Логирует метрики из словаря результатов."""
     for key, value in result_dict.items():
-        if isinstance(value, (int, float, np.number)):
+        if isinstance(value, int | float | np.number):
             mlflow.log_metric(key, float(value))
         elif isinstance(value, dict):  # Вложенные метрики
             for nested_key, nested_value in value.items():
-                if isinstance(nested_value, (int, float, np.number)):
+                if isinstance(nested_value, int | float | np.number):
                     mlflow.log_metric(f"{key}_{nested_key}", float(nested_value))
 
 
@@ -432,7 +443,7 @@ def _log_sklearn_model(model: BaseEstimator, model_name: str):
 def _log_function_artifacts(result: Any):
     """Логирует артефакты из результата функции."""
     # Если результат - путь к файлу
-    if isinstance(result, (str, Path)):
+    if isinstance(result, str | Path):
         path = Path(result)
         if path.exists() and path.is_file():
             mlflow.log_artifact(str(path))

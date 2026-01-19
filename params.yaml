@@ -72,7 +72,7 @@ train:
     penalty: "l2"
     C: 1.0
     max_iter: 1000
-    solver: "liblinear"
+    solver: "lbfgs"  # lbfgs поддерживает многоклассовую классификацию
 
 # Model evaluation parameters
 evaluate:

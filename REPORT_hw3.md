@@ -1,18 +1,34 @@
 ## Введение
 Настроена комплексная система трекинга ML экспериментов с использованием MLflow. Реализована автоматизированная система проведения и анализа экспериментов с различными алгоритмами машинного обучения для классификации научных публикаций.
 
+## 🚀 Быстрый старт
+
+Самый быстрый способ запустить все эксперименты:
+
+```bash
+# 1. Клонируйте репозиторий
+git clone <repository-url>
+cd research_agets_hub
+
+# 2. Установите зависимости
+make install
+
+# 3. Запустите MLflow UI (в отдельном терминале)
+make mlflow-ui
+
+# 4. Запустите все эксперименты
+make experiments
+
+# Или запустите полный пайплайн (загрузка данных + эксперименты)
+make pipeline-full
+```
+
+Откройте http://127.0.0.1:5000 для просмотра результатов в MLflow UI.
+
 ## Выбранный инструмент: MLflow
 
-**Обоснование выбора MLflow:**
-- Открытый исходный код и активное сообщество
-- Комплексное решение для управления ML lifecycle
-- Удобный веб-интерфейс для анализа экспериментов
-- Автоматическое логирование параметров, метрик и артефактов
-- Model Registry для управления версиями моделей
-- Поддержка различных ML фреймворков
-- Простая интеграция с Python кодом
 
-## Настройка MLflow (4 балла)
+## Настройка MLflow
 ![MLflow](pics/mlflow4.png)
 ### Установка и настройка
 MLflow установлен через Poetry и настроен для локального использования:
@@ -36,17 +52,17 @@ mlflow:
 
 ### Запуск tracking server
 ```bash
-mlflow server --host 127.0.0.1 --port 3000 --backend-store-uri file:./mlruns
+mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri file:./mlruns
 ```
 
-Tracking server доступен по адресу: http://127.0.0.1:3000
+Tracking server доступен по адресу: http://127.0.0.1:5000
 
 ### Структура хранения
 - **Backend Store**: Локальная файловая система (`./mlruns`)
 - **Artifact Store**: Локальная директория для артефактов
 - **Model Registry**: Встроенный SQLite для управления моделями
 
-## Проведение экспериментов (4 балла)
+## Проведение экспериментов
 
 ### Автоматизированная система экспериментов
 Создан скрипт `scripts/run_experiments.py` для автоматического проведения 17 экспериментов:
@@ -101,163 +117,221 @@ Tracking server доступен по адресу: http://127.0.0.1:3000
 
 ![MLflow](pics/mlflow5.png)
 
-**🏆 ЛУЧШИЕ РЕЗУЛЬТАТЫ:**
-
-**По точности:**
-- **Алгоритм**: Random Forest с расширенными признаками
-- **Эксперимент**: RF_more_features
-- **Test Accuracy**: 0.350 (35%)
-- **F1-score**: 0.205
-- **CV Accuracy**: 0.400 ± 0.031
-
-**По алгоритмам:**
-- **Random Forest**: Средняя точность 0.275, лучшая 0.350 (6 экспериментов)
-- **SVM**: Средняя точность 0.240, лучшая 0.250 (5 экспериментов)
-- **Logistic Regression**: Средняя точность 0.200, лучшая 0.200 (6 экспериментов)
-
-**📊 СТАТИСТИКА ЭКСПЕРИМЕНТОВ:**
-- **Всего проведено**: 17 экспериментов
-- **Успешных**: 17 (100%)
-- **Неудачных**: 0
-- **Время выполнения**: ~2-3 минуты
 
 ### Система фильтрации и поиска
 Реализованы утилиты для поиска и фильтрации экспериментов:
 
-```python
-# Поиск по метрикам
-search_runs_by_metrics(
-    experiment_name="research_publications_classification",
-    metric_thresholds={"test_accuracy": (0.9, ">=")},
-)
+**Доступные функции:**
+- `search_runs_by_metrics()` - поиск запусков по метрикам с пороговыми значениями
+- `get_experiment_leaderboard()` - получение топ N лучших запусков по метрике
+- Фильтрация в MLflow UI по параметрам и метрикам
 
-# Получение топ результатов
-get_experiment_leaderboard(
-    experiment_name="research_publications_classification",
-    metric="test_accuracy",
-    top_n=5
-)
-```
+## Интеграция с кодом
 
-## Интеграция с кодом (2 балла)
+### Архитектура интеграции
+
+Интеграция MLflow реализована на двух уровнях:
+
+1. **Контекстный менеджер `mlflow_run_context`** - для управления экспериментами
+   - Создает единый MLflow run для всего эксперимента
+   - Автоматически логирует время выполнения и статус
+   - Обрабатывает исключения и устанавливает теги
+
+2. **Декораторы** - для автоматического логирования деталей функций
+   - Применяются к вспомогательным функциям ВНУТРИ эксперимента
+   - Логируют информацию о данных, время выполнения, ошибки
+   - Используются во всех скриптах пайплайна (fetch, preprocess, train)
+
+**Ключевой принцип:** Контекстный менеджер создает один run, декораторы обогащают его информацией.
+
+### Контекстный менеджер для управления MLflow runs
+
+- Автоматическое создание и завершение MLflow run
+- Автоматическое логирование времени выполнения
+- Установка статуса эксперимента (success/failed)
+- Используется в `scripts/train_model.py` для обучения моделей
 
 ### Декораторы для автоматического логирования
-Созданы декораторы в `researchhub/decorators.py`:
 
-**1. Основной декоратор для трекинга:**
-```python
-@mlflow_track(
-    experiment_name="my_experiment",
-    run_name="custom_run",
-    tags={"algorithm": "RF"},
-    log_params=True,
-    log_artifacts=True
-)
-def train_model(data, params):
-    # Автоматически логирует параметры, время выполнения, результаты
-    return trained_model
-```
+Созданы **8 декораторов** в `researchhub/decorators.py`, **активно используются 3** во всех скриптах пайплайна
 
-**2. Декоратор для логирования времени выполнения:**
-```python
-@log_execution_time
-def preprocess_data(df):
-    # Автоматически логирует время выполнения
-    return processed_df
-```
+**1. @log_dataset_info** - автоматически логирует информацию о датасете:
+   - Логирует размерность (shape, columns, rows)
+   - Подсчитывает пропущенные значения
+   - Собирает статистику по типам данных
+   - Работает только с функциями, возвращающими `pd.DataFrame`
 
-**3. Декоратор для логирования метрик:**
-```python
-@log_model_metrics(metrics_to_log=["accuracy", "f1_score"])
-def evaluate_model(model, X_test, y_test):
-    return {"accuracy": 0.95, "f1_score": 0.93}
-```
+**2. @log_execution_time** - автоматически логирует время выполнения:
+   - Измеряет время выполнения функции
+   - Логирует метрику `{function_name}_execution_time` в MLflow
+   - Работает с любыми функциями
 
-**4. Декоратор для логирования данных:**
-```python
-@log_dataset_info(log_shape=True, log_missing=True, log_stats=True)
-def load_data(filepath):
-    # Автоматически логирует информацию о датасете
-    return df
-```
+**3. @handle_exceptions** - автоматически обрабатывает ошибки:
+   - Перехватывает исключения
+   - Логирует traceback в MLflow tags
+   - Может пробросить исключение дальше (reraise=True)
 
-### Контекстные менеджеры
-```python
-with mlflow_run_context(
-    experiment_name="data_preprocessing",
-    run_name="feature_engineering",
-    tags={"stage": "preprocessing"}
-):
-    # Код автоматически логируется в MLflow
-    processed_data = preprocess_features(raw_data)
-    mlflow.log_metric("features_created", processed_data.shape[1])
-```
+**Использование декораторов в проекте:**
+
+| Скрипт | Функция | Декораторы |
+|--------|---------|-----------|
+| `train_model.py` | `load_data` | `@handle_exceptions`, `@log_dataset_info` |
+| `train_model.py` | `create_features` | `@handle_exceptions`, `@log_execution_time` |
+| `train_model.py` | `evaluate_model` | `@log_execution_time`, `@handle_exceptions` |
+| `preprocess_data.py` | `load_raw_data` | `@log_dataset_info`, `@handle_exceptions` |
+| `preprocess_data.py` | `preprocess_data` | `@log_execution_time`, `@handle_exceptions` |
+| `fetch_arxiv_data.py` | `save_to_csv` | `@log_execution_time`, `@handle_exceptions` |
+| `fetch_arxiv_data.py` | `save_metadata` | `@log_execution_time`, `@handle_exceptions` |
+
+**Итого:** 3 основных декоратора активно используются в 7 функциях по всему пайплайну.
+
+
+Декораторы работают **прозрачно** - код функций остаётся чистым, а логирование происходит автоматически.
+
+### Примеры использования контекстного менеджера
+
+**Простой эксперимент:**
+- Создается единый MLflow run для всего эксперимента
+- Весь код внутри контекста автоматически отслеживается
+- Модель, метрики и параметры логируются в один run
+
+**Вложенные эксперименты (parent-child runs):**
+- Родительский run для общего процесса (например, grid search)
+- Дочерние runs для каждой итерации (каждая комбинация параметров)
+- Параметр `nested=True` создает вложенную структуру
+
+### Реализация контекстного менеджера
+
+Контекстный менеджер `mlflow_run_context` находится в `researchhub/mlflow_utils.py` и автоматически:
+- Создает и настраивает эксперимент
+- Устанавливает теги
+- Логирует время выполнения
+- Обрабатывает исключения
+- Устанавливает статус (success/failed)
+
+**Использование в проекте:**
+Функция `train_model()` в `scripts/train_model.py` оборачивает весь процесс обучения в `mlflow_run_context`, что создает единый MLflow run для всего эксперимента. Декорированные функции внутри контекста обогащают этот run дополнительной информацией.
 
 ### Утилиты для работы с экспериментами
 Создан класс `MLflowExperimentManager` в `researchhub/mlflow_utils.py`:
 
 **Основные возможности:**
 - Создание и управление экспериментами
-- Поиск и фильтрация запусков
+- Поиск и фильтрация запусков по метрикам
 - Сравнение результатов экспериментов
-- Экспорт результатов в различные форматы
+- Экспорт результатов в различные форматы (CSV, JSON)
 - Работа с Model Registry
 
-```python
-# Создание менеджера
-manager = MLflowExperimentManager("file:./mlruns")
-
-# Получение лучшего запуска
-best_run = manager.get_best_run(
-    experiment_name="research_publications_classification",
-    metric_name="test_accuracy"
-)
-
-# Сравнение запусков
-comparison = manager.compare_runs(
-    run_ids=["run_1", "run_2", "run_3"],
-    metrics=["accuracy", "f1_score", "precision"]
-)
-
-# Экспорт результатов
-manager.export_experiment_results(
-    experiment_name="research_publications_classification",
-    output_file="results.csv",
-    format="csv"
-)
-```
+**Функционал:**
+- `get_best_run()` - поиск лучшего запуска по метрике
+- `compare_runs()` - сравнение нескольких запусков
+- `export_experiment_results()` - экспорт результатов
 
 ### Model Registry интеграция
-```python
-# Автоматическая регистрация моделей
-registry = MLflowModelRegistry()
-version = registry.register_model(
-    model_uri="runs:/run_id/models/model",
-    model_name="publications_classifier",
-    tags={"algorithm": "SVM", "version": "1.0"}
-)
-
-# Управление стадиями модели
-registry.transition_model_version_stage(
-    model_name="publications_classifier",
-    version="1",
-    stage="Production"
-)
-```
+Реализована автоматическая регистрация моделей:
+- Регистрация модели по URI запуска
+- Управление версиями моделей
+- Переход между стадиями (Staging, Production, Archived)
+- Теги и метаданные для моделей
 
 ## Воспроизводимость результатов
 
-### Автоматизация через скрипты
+### Автоматизация через DVC и Makefile
+
+Проект полностью интегрирован с DVC и Makefile для воспроизводимости экспериментов.
+
+#### Через Makefile (рекомендуется)
+
+```bash
+# Установка зависимостей
+make install
+
+# Полный пайплайн: данные + обучение + все эксперименты
+make pipeline-full
+
+# Только эксперименты (если данные уже готовы)
+make experiments
+
+# Только обучение базовой модели
+make train
+
+# Запуск MLflow UI для просмотра результатов
+make mlflow-ui
+
+# Просмотр сводки результатов в терминале
+make results
+
+# Очистка артефактов экспериментов
+make clean-experiments
+```
+
+#### Через DVC напрямую
+
+```bash
+# Полный пайплайн
+poetry run dvc repro
+
+# Только данные (fetch + preprocess)
+poetry run dvc repro preprocess
+
+# Только обучение базовой модели
+poetry run dvc repro train
+
+# Запуск всех экспериментов
+poetry run dvc repro run_experiments
+
+# Просмотр статуса пайплайна
+poetry run dvc status
+
+# Просмотр DAG пайплайна
+poetry run dvc dag
+```
+
+#### Через Python скрипты напрямую
+
 ```bash
 # Полное воспроизведение экспериментов
-python scripts/run_experiments.py
+poetry run python scripts/run_experiments.py
 
 # Запуск конкретного эксперимента
-python scripts/train_model.py \
+poetry run python scripts/train_model.py \
     --input data/processed/publications_processed.csv \
     --model-output models/classifier.pkl \
     --metrics metrics.json
 ```
+
+### DVC Pipeline структура
+
+```
+fetch_data → preprocess → train (baseline)
+                      ↓
+                  run_experiments (15+ моделей)
+```
+
+**Стадии пайплайна:**
+
+1. **fetch_data**: Загрузка данных из ArXiv API
+   - Вход: параметры запроса
+   - Выход: `data/raw/arxiv_publications.csv`
+   - Декораторы: `@log_execution_time`, `@handle_exceptions` (2 функции)
+
+2. **preprocess**: Предобработка данных
+   - Вход: `data/raw/arxiv_publications.csv`
+   - Выход: `data/processed/publications_processed.csv`
+   - Декораторы: `@log_dataset_info`, `@log_execution_time`, `@handle_exceptions` (2 функции)
+
+3. **train**: Обучение базовой модели
+   - Вход: обработанные данные
+   - Выход: `models/baseline_model.pkl`, метрики
+   - Контекстный менеджер: `mlflow_run_context`
+   - Декораторы: `@log_dataset_info`, `@log_execution_time`, `@handle_exceptions` (3 функции)
+   - MLflow: автоматическое логирование параметров, метрик, модели
+
+4. **run_experiments**: Запуск 15+ экспериментов
+   - Вход: обработанные данные
+   - Выход: `experiments/*/`, `experiments_summary.json`
+   - Использует `train_model.py` для каждого эксперимента
+   - MLflow: все результаты в `mlruns/`
 
 ### Фиксация random state
 Все эксперименты используют `random_state=42` для обеспечения воспроизводимости результатов.
@@ -273,7 +347,7 @@ git add models.dvc data/processed.dvc
 ## Веб-интерфейс MLflow
 
 ### Доступ к результатам
-MLflow UI доступен по адресу: http://127.0.0.1:3000
+MLflow UI доступен по адресу: http://127.0.0.1:5000
 
 **Основные возможности интерфейса:**
 - Просмотр всех экспериментов и запусков
@@ -303,18 +377,23 @@ metrics.test_accuracy >= 0.95 AND params.algorithm = "RandomForestClassifier"
 ```
 research_agets_hub/
 ├── mlruns/                          # MLflow tracking данные
-│   ├── 513200582704195422/         # Эксперименты
+│   ├── 317899650776771811/         # ID эксперимента
 │   └── models/                     # Model Registry
 ├── experiments/                    # Результаты экспериментов
 │   ├── RF_baseline/
+│   │   ├── model.pkl
+│   │   ├── metrics.json
+│   │   └── model_metadata.yaml
 │   ├── SVM_linear/
 │   └── ...
 ├── scripts/
-│   ├── run_experiments.py         # Автоматизация экспериментов
-│   └── train_model.py            # Обучение с MLflow
+│   ├── fetch_arxiv_data.py       # Загрузка данных (✅ декораторы)
+│   ├── preprocess_data.py        # Предобработка (✅ декораторы)
+│   ├── train_model.py            # Обучение (✅ декораторы + контекстный менеджер)
+│   └── run_experiments.py        # Автоматизация экспериментов
 ├── researchhub/
-│   ├── mlflow_utils.py           # Утилиты MLflow
-│   └── decorators.py             # Декораторы для логирования
+│   ├── mlflow_utils.py           # Утилиты и контекстный менеджер
+│   └── decorators.py             # 8 декораторов (3 активно используются)
 ├── experiments_summary.json       # Сводка результатов
 └── params.yaml                   # Конфигурация экспериментов
 ```
@@ -342,7 +421,7 @@ docker-compose run --rm ml-app python scripts/run_experiments.py
 ```
 
 **Шаг 3: Просмотр результатов**
-- MLflow UI: http://localhost:3000
+- MLflow UI: http://localhost:5000
 - Результаты в папке `experiments/`
 - Сводка: `experiments_summary.json`
 
@@ -371,102 +450,67 @@ docker-compose up mlflow-server
 curl -sSL https://install.python-poetry.org | python3 -
 
 # Установка зависимостей
+make install
+# или
 poetry install
-
-# Активация окружения
-poetry shell
 ```
 
-**Запуск пайплайна:**
+**Запуск пайплайна через Makefile (самый простой способ):**
+
+```bash
+# Терминал 1: Запуск MLflow UI
+make mlflow-ui
+
+# Терминал 2: Запуск полного пайплайна с экспериментами
+make pipeline-full
+```
+
+**Или пошагово:**
+
 ```bash
 # 1. Загрузка и обработка данных
-dvc repro
+make data-pipeline
+# или: poetry run dvc repro preprocess
 
 # 2. Запуск MLflow сервера (в отдельном терминале)
-mlflow server --host 127.0.0.1 --port 3000 --backend-store-uri file:./mlruns &
+make mlflow-server
+# или: poetry run mlflow server --backend-store-uri file:./mlruns --port 5000 &
 
 # 3. Запуск всех экспериментов
-python scripts/run_experiments.py
+make experiments
+# или: poetry run dvc repro run_experiments
+# или: poetry run python scripts/run_experiments.py
+
+# 4. Просмотр результатов
+make results
 ```
+
+**Доступные команды Makefile:**
+
+| Команда | Описание |
+|---------|----------|
+| `make install` | Установить зависимости |
+| `make pipeline` | Запустить полный DVC пайплайн |
+| `make pipeline-full` | Запустить пайплайн с экспериментами |
+| `make data-pipeline` | Загрузить и обработать данные |
+| `make train` | Обучить базовую модель |
+| `make experiments` | Запустить все эксперименты (15+) |
+| `make mlflow-ui` | Запустить MLflow UI |
+| `make mlflow-server` | Запустить MLflow server в фоне |
+| `make results` | Показать сводку результатов |
+| `make clean-experiments` | Удалить артефакты экспериментов |
+| `make format` | Форматировать код |
+| `make check` | Проверить качество кода |
 
 ### Проверка результатов
 
 **Доступ к MLflow UI:**
-- Веб-интерфейс: http://localhost:3000
+- Веб-интерфейс: http://localhost:5000
 - Все эксперименты отображаются с метриками и артефактами
 - Возможность сравнения экспериментов
 
-**Файлы результатов:**
-```bash
-experiments/                    # Артефакты каждого эксперимента
-├── RF_baseline/
-│   ├── model.pkl              # Обученная модель
-│   ├── metrics.json           # Метрики
-│   └── model_metadata.yaml    # Метаданные
-├── SVM_linear/
-└── ...
-experiments_summary.json       # Сводка всех экспериментов
-mlruns/                        # MLflow tracking данные
-```
 
 **Время выполнения:**
 - Полный пайплайн: ~3-5 минут
 - Только эксперименты: ~2-3 минуты
 - Скачивание данных: ~30 секунд
-
-### 🔧 Устранение проблем
-
-**Если Docker не запускается:**
-```bash
-# Проверка Docker
-docker --version
-docker-compose --version
-
-# Очистка и перезапуск
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up mlflow-server
-```
-
-**Если данные не скачиваются:**
-```bash
-# Ручной запуск скачивания
-docker-compose run --rm ml-app python scripts/fetch_arxiv_data.py \
-  --query "cat:eess.IV OR cat:cs.CV OR cat:q-bio.QM OR cat:cs.LG" \
-  --max-results 100 \
-  --output-dir data/raw
-```
-
-**Проверка статуса:**
-```bash
-# Проверка состояния контейнеров
-docker-compose ps
-
-# Проверка логов
-docker-compose logs mlflow-server
-
-# Интерактивная оболочка для отладки
-docker-compose run --rm ml-app bash
-```
-
-### ⚙️ Дополнительные команды
-
-**Разработческий режим:**
-```bash
-# Запуск с Jupyter Lab
-docker-compose --profile development up jupyter-dev
-
-# Доступ: http://localhost:8888
-```
-
-**Использование Makefile:**
-```bash
-# Проверка качества кода
-make check
-
-# Форматирование кода
-make format
-
-# Запуск полного пайплайна
-make pipeline
-```

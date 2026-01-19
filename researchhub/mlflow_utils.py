@@ -46,25 +46,25 @@ class MLflowExperimentManager:
         try:
             experiment = self.client.get_experiment_by_name(experiment_name)
             if experiment:
-                return experiment.experiment_id
+                return experiment.experiment_id  # type: ignore[no-any-return]
         except Exception:
-            pass
+            pass  # nosec B110 - намеренно игнорируем ошибки при поиске эксперимента
 
         experiment_id = self.client.create_experiment(experiment_name)
         logger.info(
             f"Создан новый эксперимент: {experiment_name} (ID: {experiment_id})"
         )
-        return experiment_id
+        return experiment_id  # type: ignore[no-any-return]
 
     def list_experiments(self) -> list[Experiment]:
         """Возвращает список всех экспериментов."""
-        return self.client.search_experiments()
+        return self.client.search_experiments()  # type: ignore[no-any-return]
 
     def get_experiment_runs(
         self,
         experiment_name: str,
         filter_string: str = "",
-        order_by: list[str] = None,
+        order_by: list[str] | None = None,
         max_results: int = 1000,
     ) -> list[Run]:
         """
@@ -84,7 +84,7 @@ class MLflowExperimentManager:
             logger.warning(f"Эксперимент '{experiment_name}' не найден")
             return []
 
-        return self.client.search_runs(
+        return self.client.search_runs(  # type: ignore[no-any-return]
             experiment_ids=[experiment.experiment_id],
             filter_string=filter_string,
             order_by=order_by or [],
@@ -113,7 +113,7 @@ class MLflowExperimentManager:
         return runs[0] if runs else None
 
     def compare_runs(
-        self, run_ids: list[str], metrics: list[str] = None
+        self, run_ids: list[str], metrics: list[str] | None = None
     ) -> pd.DataFrame:
         """
         Сравнивает запуски по указанным метрикам.
@@ -246,8 +246,8 @@ class MLflowExperimentManager:
 
 def mlflow_experiment(
     experiment_name: str,
-    run_name: str = None,
-    tags: dict[str, Any] = None,
+    run_name: str | None = None,
+    tags: dict[str, Any] | None = None,
     auto_log: bool = True,
 ):
     """
@@ -306,8 +306,8 @@ def mlflow_experiment(
 @contextmanager
 def mlflow_run_context(
     experiment_name: str,
-    run_name: str = None,
-    tags: dict[str, Any] = None,
+    run_name: str | None = None,
+    tags: dict[str, Any] | None = None,
     nested: bool = False,
 ):
     """
@@ -356,7 +356,7 @@ class MLflowModelRegistry:
         self.client = MlflowClient(tracking_uri)
 
     def register_model(
-        self, model_uri: str, model_name: str, tags: dict[str, Any] = None
+        self, model_uri: str, model_name: str, tags: dict[str, Any] | None = None
     ) -> str:
         """
         Регистрирует модель в Model Registry.
@@ -378,7 +378,7 @@ class MLflowModelRegistry:
                 )
 
         logger.info(f"Модель {model_name} версии {result.version} зарегистрирована")
-        return result.version
+        return result.version  # type: ignore[no-any-return]
 
     def get_latest_model_version(
         self, model_name: str, stage: str = "None"
@@ -430,7 +430,7 @@ class MLflowModelRegistry:
 
 def search_runs_by_metrics(
     experiment_name: str,
-    metric_thresholds: dict[str, tuple[float, str]] = None,
+    metric_thresholds: dict[str, tuple[float, str]] | None = None,
     tracking_uri: str = "file:./mlruns",
 ) -> pd.DataFrame:
     """

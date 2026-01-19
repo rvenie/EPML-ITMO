@@ -15,6 +15,13 @@ import numpy as np
 import pandas as pd
 import yaml  # type: ignore
 
+# Декораторы для логирования
+from researchhub.decorators import (
+    handle_exceptions,
+    log_dataset_info,
+    log_execution_time,
+)
+
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
@@ -114,11 +121,32 @@ def calculate_impact_score(cited_by: int, year: int) -> float:
     return float(round(impact_score, 3))
 
 
+@log_dataset_info(log_shape=True, log_dtypes=True, log_missing=True, log_stats=True)
+@handle_exceptions(log_traceback=True, reraise=True)
+def load_raw_data(input_file: str) -> pd.DataFrame:
+    """
+    Загружает сырые данные из CSV файла.
+    Декоратор автоматически логирует информацию о загруженном датасете.
+
+    Args:
+        input_file: Путь к входному CSV файлу
+
+    Returns:
+        DataFrame с загруженными данными
+    """
+    df = pd.read_csv(input_file)
+    logger.info(f"Loaded {len(df)} records from {input_file}")
+    return df
+
+
+@log_execution_time
+@handle_exceptions(log_traceback=True, reraise=True)
 def preprocess_data(
     input_file: str, output_file: str, metadata_file: str | None = None
 ) -> None:
     """
     Основная функция предобработки.
+    Декораторы автоматически логируют время выполнения и обрабатывают ошибки.
 
     Args:
         input_file: Путь к входному CSV файлу
@@ -127,13 +155,8 @@ def preprocess_data(
     """
     logger.info(f"Starting data preprocessing: {input_file} -> {output_file}")
 
-    # Загружаем данные
-    try:
-        df = pd.read_csv(input_file)
-        logger.info(f"Loaded {len(df)} records from {input_file}")
-    except Exception as e:
-        logger.error(f"Error loading data: {e}")
-        return
+    # Загружаем данные с использованием декорированной функции
+    df = load_raw_data(input_file)
 
     # Сохраняем исходную форму для метаданных
     original_shape = df.shape

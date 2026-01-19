@@ -24,6 +24,9 @@ from urllib.request import urlopen
 import defusedxml.ElementTree as ElementTree
 import yaml  # type: ignore
 
+# Декораторы для логирования
+from researchhub.decorators import handle_exceptions, log_execution_time
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -198,6 +201,8 @@ class ArXivFetcher:
             logger.error(f"Error parsing paper entry: {e}")
             return None
 
+    @log_execution_time
+    @handle_exceptions(log_traceback=True, reraise=True)
     def save_to_csv(
         self, papers: list[dict[str, Any]], filename: str = "arxiv_publications.csv"
     ):
@@ -240,6 +245,8 @@ class ArXivFetcher:
             logger.error(f"Error saving CSV file: {e}")
             raise
 
+    @log_execution_time
+    @handle_exceptions(log_traceback=True, reraise=True)
     def save_metadata(
         self,
         query: str,

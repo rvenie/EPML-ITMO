@@ -1,4 +1,5 @@
 [project]
+
 name = "research-agents-hub"
 version = "0.1.0"
 description = "ML pipeline for ArXiv research publication analysis with DVC and MLflow"
@@ -6,7 +7,7 @@ authors = [
     {name = "Research Team", email = "research@example.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<4.0"
 keywords = ["machine-learning", "research", "publications", "dvc", "mlflow", "arxiv"]
 
 
@@ -19,6 +20,7 @@ dependencies = [
     "pyyaml>=6.0.0,<7.0.0",
     "requests>=2.31.0,<3.0.0",
     "defusedxml>=0.7.0,<1.0.0",
+    "loguru>=0.7.0,<1.0.0",
 ]
 
 [project.optional-dependencies]

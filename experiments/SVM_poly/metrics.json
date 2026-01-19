@@ -1,13 +1,13 @@
 {
   "cross_validation": {
-    "mean_score": 0.35,
-    "std_score": 0.030618621784789725,
+    "mean_score": 0.1875,
+    "std_score": 0.03952847075210474,
     "scores": [
-      0.3125,
-      0.375,
-      0.375,
-      0.375,
-      0.3125
+      0.25,
+      0.1875,
+      0.1875,
+      0.1875,
+      0.125
     ]
   },
   "test_metrics": {
@@ -20,8 +20,8 @@
     "algorithm": "SVM",
     "training_samples": 80,
     "test_samples": 20,
-    "features": 2080,
+    "features": 2150,
     "classes": 44
   },
-  "training_date": "2025-12-21T23:48:06.960998"
+  "training_date": "2026-01-19T21:19:20.377198"
 }

@@ -1,9 +1,9 @@
 {
   "cross_validation": {
-    "mean_score": 0.375,
-    "std_score": 0.03952847075210474,
+    "mean_score": 0.4,
+    "std_score": 0.03061862178478973,
     "scores": [
-      0.3125,
+      0.4375,
       0.4375,
       0.375,
       0.375,
@@ -11,17 +11,17 @@
     ]
   },
   "test_metrics": {
-    "accuracy": 0.25,
-    "precision": 0.06578947368421052,
-    "recall": 0.25,
-    "f1_score": 0.10416666666666667
+    "accuracy": 0.4,
+    "precision": 0.18888888888888888,
+    "recall": 0.4,
+    "f1_score": 0.25357142857142856
   },
   "model_info": {
     "algorithm": "RandomForestClassifier",
     "training_samples": 80,
     "test_samples": 20,
-    "features": 2080,
+    "features": 2150,
     "classes": 44
   },
-  "training_date": "2025-12-21T23:47:43.409138"
+  "training_date": "2026-01-19T21:18:59.384267"
 }

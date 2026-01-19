@@ -1,0 +1,2172 @@
+{
+  "experiment_run_date": "2026-01-19T21:20:50.535522",
+  "summary": {
+    "total_experiments": 17,
+    "successful_experiments": 17,
+    "failed_experiments": 0,
+    "best_accuracy_experiment": {
+      "experiment_name": "RF_more_features",
+      "algorithm": "RandomForestClassifier",
+      "status": "success",
+      "training_time": 1.8925693035125732,
+      "test_accuracy": 0.45,
+      "test_f1_score": 0.3166666666666667,
+      "cv_mean_score": 0.45,
+      "cv_std_score": 0.082915619758885,
+      "params": {
+        "algorithm": "RandomForestClassifier",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 10000,
+        "ngram_range": [
+          1,
+          3
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/RF_more_features/model.pkl",
+      "metrics_path": "experiments/RF_more_features/metrics.json"
+    },
+    "best_f1_experiment": {
+      "experiment_name": "RF_more_features",
+      "algorithm": "RandomForestClassifier",
+      "status": "success",
+      "training_time": 1.8925693035125732,
+      "test_accuracy": 0.45,
+      "test_f1_score": 0.3166666666666667,
+      "cv_mean_score": 0.45,
+      "cv_std_score": 0.082915619758885,
+      "params": {
+        "algorithm": "RandomForestClassifier",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 10000,
+        "ngram_range": [
+          1,
+          3
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/RF_more_features/model.pkl",
+      "metrics_path": "experiments/RF_more_features/metrics.json"
+    },
+    "algorithm_statistics": {
+      "RandomForestClassifier": {
+        "count": 6,
+        "accuracies": [
+          0.4,
+          0.4,
+          0.4,
+          0.4,
+          0.45,
+          0.4
+        ],
+        "f1_scores": [
+          0.26730769230769236,
+          0.26153846153846155,
+          0.2603896103896104,
+          0.25357142857142856,
+          0.3166666666666667,
+          0.27261904761904765
+        ],
+        "mean_accuracy": 0.4083333333333334,
+        "mean_f1_score": 0.2720154845154845,
+        "best_accuracy": 0.45,
+        "best_f1_score": 0.3166666666666667
+      },
+      "SVM": {
+        "count": 5,
+        "accuracies": [
+          0.25,
+          0.3,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "f1_scores": [
+          0.1,
+          0.2690476190476191,
+          0.10869565217391304,
+          0.1,
+          0.1
+        ],
+        "mean_accuracy": 0.26,
+        "mean_f1_score": 0.13554865424430643,
+        "best_accuracy": 0.3,
+        "best_f1_score": 0.2690476190476191
+      },
+      "LogisticRegression": {
+        "count": 6,
+        "accuracies": [
+          0.2,
+          0.2,
+          0.25,
+          0.2,
+          0.2,
+          0.2
+        ],
+        "f1_scores": [
+          0.16969696969696968,
+          0.1,
+          0.21969696969696967,
+          0.15833333333333333,
+          0.10526315789473684,
+          0.15833333333333333
+        ],
+        "mean_accuracy": 0.20833333333333334,
+        "mean_f1_score": 0.15188729399255715,
+        "best_accuracy": 0.25,
+        "best_f1_score": 0.21969696969696967
+      }
+    },
+    "top_5_by_accuracy": [
+      {
+        "experiment_name": "RF_more_features",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 1.8925693035125732,
+        "test_accuracy": 0.45,
+        "test_f1_score": 0.3166666666666667,
+        "cv_mean_score": 0.45,
+        "cv_std_score": 0.082915619758885,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 100,
+            "max_depth": 10,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 10000,
+          "ngram_range": [
+            1,
+            3
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_more_features/model.pkl",
+        "metrics_path": "experiments/RF_more_features/metrics.json"
+      },
+      {
+        "experiment_name": "RF_baseline",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 3.354077100753784,
+        "test_accuracy": 0.4,
+        "test_f1_score": 0.26730769230769236,
+        "cv_mean_score": 0.4,
+        "cv_std_score": 0.03061862178478973,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 100,
+            "max_depth": 10,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 5000,
+          "ngram_range": [
+            1,
+            2
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_baseline/model.pkl",
+        "metrics_path": "experiments/RF_baseline/metrics.json"
+      },
+      {
+        "experiment_name": "RF_more_trees",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 2.940062999725342,
+        "test_accuracy": 0.4,
+        "test_f1_score": 0.26153846153846155,
+        "cv_mean_score": 0.4,
+        "cv_std_score": 0.03061862178478973,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 200,
+            "max_depth": 10,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 5000,
+          "ngram_range": [
+            1,
+            2
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_more_trees/model.pkl",
+        "metrics_path": "experiments/RF_more_trees/metrics.json"
+      },
+      {
+        "experiment_name": "RF_deeper",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 2.657325029373169,
+        "test_accuracy": 0.4,
+        "test_f1_score": 0.2603896103896104,
+        "cv_mean_score": 0.4,
+        "cv_std_score": 0.03061862178478973,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 100,
+            "max_depth": 20,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 5000,
+          "ngram_range": [
+            1,
+            2
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_deeper/model.pkl",
+        "metrics_path": "experiments/RF_deeper/metrics.json"
+      },
+      {
+        "experiment_name": "RF_conservative",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 2.002232789993286,
+        "test_accuracy": 0.4,
+        "test_f1_score": 0.25357142857142856,
+        "cv_mean_score": 0.4,
+        "cv_std_score": 0.03061862178478973,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 150,
+            "max_depth": 7,
+            "min_samples_split": 10,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 3000,
+          "ngram_range": [
+            1,
+            2
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_conservative/model.pkl",
+        "metrics_path": "experiments/RF_conservative/metrics.json"
+      }
+    ],
+    "top_5_by_f1": [
+      {
+        "experiment_name": "RF_more_features",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 1.8925693035125732,
+        "test_accuracy": 0.45,
+        "test_f1_score": 0.3166666666666667,
+        "cv_mean_score": 0.45,
+        "cv_std_score": 0.082915619758885,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 100,
+            "max_depth": 10,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 10000,
+          "ngram_range": [
+            1,
+            3
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_more_features/model.pkl",
+        "metrics_path": "experiments/RF_more_features/metrics.json"
+      },
+      {
+        "experiment_name": "RF_unigrams_only",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 1.9037423133850098,
+        "test_accuracy": 0.4,
+        "test_f1_score": 0.27261904761904765,
+        "cv_mean_score": 0.375,
+        "cv_std_score": 0.06846531968814576,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 100,
+            "max_depth": 10,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 5000,
+          "ngram_range": [
+            1,
+            1
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_unigrams_only/model.pkl",
+        "metrics_path": "experiments/RF_unigrams_only/metrics.json"
+      },
+      {
+        "experiment_name": "SVM_linear",
+        "algorithm": "SVM",
+        "status": "success",
+        "training_time": 12.3002610206604,
+        "test_accuracy": 0.3,
+        "test_f1_score": 0.2690476190476191,
+        "cv_mean_score": 0.2,
+        "cv_std_score": 0.07288689868556625,
+        "params": {
+          "algorithm": "SVM",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 100,
+            "max_depth": 10,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "linear",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 5000,
+          "ngram_range": [
+            1,
+            2
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/SVM_linear/model.pkl",
+        "metrics_path": "experiments/SVM_linear/metrics.json"
+      },
+      {
+        "experiment_name": "RF_baseline",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 3.354077100753784,
+        "test_accuracy": 0.4,
+        "test_f1_score": 0.26730769230769236,
+        "cv_mean_score": 0.4,
+        "cv_std_score": 0.03061862178478973,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 100,
+            "max_depth": 10,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 5000,
+          "ngram_range": [
+            1,
+            2
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_baseline/model.pkl",
+        "metrics_path": "experiments/RF_baseline/metrics.json"
+      },
+      {
+        "experiment_name": "RF_more_trees",
+        "algorithm": "RandomForestClassifier",
+        "status": "success",
+        "training_time": 2.940062999725342,
+        "test_accuracy": 0.4,
+        "test_f1_score": 0.26153846153846155,
+        "cv_mean_score": 0.4,
+        "cv_std_score": 0.03061862178478973,
+        "params": {
+          "algorithm": "RandomForestClassifier",
+          "test_size": 0.2,
+          "random_state": 42,
+          "cross_validation": {
+            "folds": 5,
+            "scoring": "accuracy",
+            "stratify": true
+          },
+          "random_forest": {
+            "n_estimators": 200,
+            "max_depth": 10,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2,
+            "max_features": "sqrt",
+            "bootstrap": true,
+            "oob_score": true
+          },
+          "svm": {
+            "kernel": "rbf",
+            "C": 1.0,
+            "gamma": "scale",
+            "probability": true
+          },
+          "logistic_regression": {
+            "penalty": "l2",
+            "C": 1.0,
+            "max_iter": 1000,
+            "solver": "lbfgs"
+          }
+        },
+        "feature_params": {
+          "tfidf_max_features": 5000,
+          "ngram_range": [
+            1,
+            2
+          ],
+          "min_df": 2,
+          "max_df": 0.95,
+          "use_tfidf": true,
+          "lowercase": true,
+          "stop_words": "english",
+          "text_columns": [
+            "title",
+            "abstract",
+            "keywords"
+          ],
+          "categorical_columns": [
+            "journal_category",
+            "year_category",
+            "author_count_category"
+          ],
+          "numerical_columns": [
+            "year",
+            "title_length",
+            "abstract_length",
+            "author_count",
+            "num_keywords"
+          ]
+        },
+        "model_path": "experiments/RF_more_trees/model.pkl",
+        "metrics_path": "experiments/RF_more_trees/metrics.json"
+      }
+    ]
+  },
+  "detailed_results": [
+    {
+      "experiment_name": "RF_baseline",
+      "algorithm": "RandomForestClassifier",
+      "status": "success",
+      "training_time": 3.354077100753784,
+      "test_accuracy": 0.4,
+      "test_f1_score": 0.26730769230769236,
+      "cv_mean_score": 0.4,
+      "cv_std_score": 0.03061862178478973,
+      "params": {
+        "algorithm": "RandomForestClassifier",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/RF_baseline/model.pkl",
+      "metrics_path": "experiments/RF_baseline/metrics.json"
+    },
+    {
+      "experiment_name": "RF_more_trees",
+      "algorithm": "RandomForestClassifier",
+      "status": "success",
+      "training_time": 2.940062999725342,
+      "test_accuracy": 0.4,
+      "test_f1_score": 0.26153846153846155,
+      "cv_mean_score": 0.4,
+      "cv_std_score": 0.03061862178478973,
+      "params": {
+        "algorithm": "RandomForestClassifier",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 200,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/RF_more_trees/model.pkl",
+      "metrics_path": "experiments/RF_more_trees/metrics.json"
+    },
+    {
+      "experiment_name": "RF_deeper",
+      "algorithm": "RandomForestClassifier",
+      "status": "success",
+      "training_time": 2.657325029373169,
+      "test_accuracy": 0.4,
+      "test_f1_score": 0.2603896103896104,
+      "cv_mean_score": 0.4,
+      "cv_std_score": 0.03061862178478973,
+      "params": {
+        "algorithm": "RandomForestClassifier",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 20,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/RF_deeper/model.pkl",
+      "metrics_path": "experiments/RF_deeper/metrics.json"
+    },
+    {
+      "experiment_name": "RF_conservative",
+      "algorithm": "RandomForestClassifier",
+      "status": "success",
+      "training_time": 2.002232789993286,
+      "test_accuracy": 0.4,
+      "test_f1_score": 0.25357142857142856,
+      "cv_mean_score": 0.4,
+      "cv_std_score": 0.03061862178478973,
+      "params": {
+        "algorithm": "RandomForestClassifier",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 150,
+          "max_depth": 7,
+          "min_samples_split": 10,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 3000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/RF_conservative/model.pkl",
+      "metrics_path": "experiments/RF_conservative/metrics.json"
+    },
+    {
+      "experiment_name": "RF_more_features",
+      "algorithm": "RandomForestClassifier",
+      "status": "success",
+      "training_time": 1.8925693035125732,
+      "test_accuracy": 0.45,
+      "test_f1_score": 0.3166666666666667,
+      "cv_mean_score": 0.45,
+      "cv_std_score": 0.082915619758885,
+      "params": {
+        "algorithm": "RandomForestClassifier",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 10000,
+        "ngram_range": [
+          1,
+          3
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/RF_more_features/model.pkl",
+      "metrics_path": "experiments/RF_more_features/metrics.json"
+    },
+    {
+      "experiment_name": "SVM_baseline",
+      "algorithm": "SVM",
+      "status": "success",
+      "training_time": 1.6715707778930664,
+      "test_accuracy": 0.25,
+      "test_f1_score": 0.1,
+      "cv_mean_score": 0.2,
+      "cv_std_score": 0.024999999999999998,
+      "params": {
+        "algorithm": "SVM",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/SVM_baseline/model.pkl",
+      "metrics_path": "experiments/SVM_baseline/metrics.json"
+    },
+    {
+      "experiment_name": "SVM_linear",
+      "algorithm": "SVM",
+      "status": "success",
+      "training_time": 12.3002610206604,
+      "test_accuracy": 0.3,
+      "test_f1_score": 0.2690476190476191,
+      "cv_mean_score": 0.2,
+      "cv_std_score": 0.07288689868556625,
+      "params": {
+        "algorithm": "SVM",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "linear",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/SVM_linear/model.pkl",
+      "metrics_path": "experiments/SVM_linear/metrics.json"
+    },
+    {
+      "experiment_name": "SVM_high_C",
+      "algorithm": "SVM",
+      "status": "success",
+      "training_time": 1.6970491409301758,
+      "test_accuracy": 0.25,
+      "test_f1_score": 0.10869565217391304,
+      "cv_mean_score": 0.2375,
+      "cv_std_score": 0.09185586535436918,
+      "params": {
+        "algorithm": "SVM",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 10.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/SVM_high_C/model.pkl",
+      "metrics_path": "experiments/SVM_high_C/metrics.json"
+    },
+    {
+      "experiment_name": "SVM_low_C",
+      "algorithm": "SVM",
+      "status": "success",
+      "training_time": 1.6616261005401611,
+      "test_accuracy": 0.25,
+      "test_f1_score": 0.1,
+      "cv_mean_score": 0.2,
+      "cv_std_score": 0.024999999999999998,
+      "params": {
+        "algorithm": "SVM",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 0.1,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 3000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/SVM_low_C/model.pkl",
+      "metrics_path": "experiments/SVM_low_C/metrics.json"
+    },
+    {
+      "experiment_name": "SVM_poly",
+      "algorithm": "SVM",
+      "status": "success",
+      "training_time": 1.7611451148986816,
+      "test_accuracy": 0.25,
+      "test_f1_score": 0.1,
+      "cv_mean_score": 0.1875,
+      "cv_std_score": 0.03952847075210474,
+      "params": {
+        "algorithm": "SVM",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "poly",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true,
+          "degree": 3
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 3000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/SVM_poly/model.pkl",
+      "metrics_path": "experiments/SVM_poly/metrics.json"
+    },
+    {
+      "experiment_name": "LR_baseline",
+      "algorithm": "LogisticRegression",
+      "status": "success",
+      "training_time": 11.183340072631836,
+      "test_accuracy": 0.2,
+      "test_f1_score": 0.16969696969696968,
+      "cv_mean_score": 0.175,
+      "cv_std_score": 0.06123724356957945,
+      "params": {
+        "algorithm": "LogisticRegression",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/LR_baseline/model.pkl",
+      "metrics_path": "experiments/LR_baseline/metrics.json"
+    },
+    {
+      "experiment_name": "LR_l1_penalty",
+      "algorithm": "LogisticRegression",
+      "status": "success",
+      "training_time": 25.95077610015869,
+      "test_accuracy": 0.2,
+      "test_f1_score": 0.1,
+      "cv_mean_score": 0.1125,
+      "cv_std_score": 0.025,
+      "params": {
+        "algorithm": "LogisticRegression",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l1",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "saga"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/LR_l1_penalty/model.pkl",
+      "metrics_path": "experiments/LR_l1_penalty/metrics.json"
+    },
+    {
+      "experiment_name": "LR_high_reg",
+      "algorithm": "LogisticRegression",
+      "status": "success",
+      "training_time": 10.980485677719116,
+      "test_accuracy": 0.25,
+      "test_f1_score": 0.21969696969696967,
+      "cv_mean_score": 0.1625,
+      "cv_std_score": 0.030618621784789725,
+      "params": {
+        "algorithm": "LogisticRegression",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 0.1,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 3000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/LR_high_reg/model.pkl",
+      "metrics_path": "experiments/LR_high_reg/metrics.json"
+    },
+    {
+      "experiment_name": "LR_low_reg",
+      "algorithm": "LogisticRegression",
+      "status": "success",
+      "training_time": 10.559927701950073,
+      "test_accuracy": 0.2,
+      "test_f1_score": 0.15833333333333333,
+      "cv_mean_score": 0.125,
+      "cv_std_score": 0.05590169943749474,
+      "params": {
+        "algorithm": "LogisticRegression",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 10.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 7000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/LR_low_reg/model.pkl",
+      "metrics_path": "experiments/LR_low_reg/metrics.json"
+    },
+    {
+      "experiment_name": "LR_sag",
+      "algorithm": "LogisticRegression",
+      "status": "success",
+      "training_time": 18.25565481185913,
+      "test_accuracy": 0.2,
+      "test_f1_score": 0.10526315789473684,
+      "cv_mean_score": 0.125,
+      "cv_std_score": 0.0,
+      "params": {
+        "algorithm": "LogisticRegression",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "sag"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/LR_sag/model.pkl",
+      "metrics_path": "experiments/LR_sag/metrics.json"
+    },
+    {
+      "experiment_name": "RF_unigrams_only",
+      "algorithm": "RandomForestClassifier",
+      "status": "success",
+      "training_time": 1.9037423133850098,
+      "test_accuracy": 0.4,
+      "test_f1_score": 0.27261904761904765,
+      "cv_mean_score": 0.375,
+      "cv_std_score": 0.06846531968814576,
+      "params": {
+        "algorithm": "RandomForestClassifier",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 5000,
+        "ngram_range": [
+          1,
+          1
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/RF_unigrams_only/model.pkl",
+      "metrics_path": "experiments/RF_unigrams_only/metrics.json"
+    },
+    {
+      "experiment_name": "LR_extended_ngrams",
+      "algorithm": "LogisticRegression",
+      "status": "success",
+      "training_time": 11.310634136199951,
+      "test_accuracy": 0.2,
+      "test_f1_score": 0.15833333333333333,
+      "cv_mean_score": 0.1375,
+      "cv_std_score": 0.024999999999999998,
+      "params": {
+        "algorithm": "LogisticRegression",
+        "test_size": 0.2,
+        "random_state": 42,
+        "cross_validation": {
+          "folds": 5,
+          "scoring": "accuracy",
+          "stratify": true
+        },
+        "random_forest": {
+          "n_estimators": 100,
+          "max_depth": 10,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2,
+          "max_features": "sqrt",
+          "bootstrap": true,
+          "oob_score": true
+        },
+        "svm": {
+          "kernel": "rbf",
+          "C": 1.0,
+          "gamma": "scale",
+          "probability": true
+        },
+        "logistic_regression": {
+          "penalty": "l2",
+          "C": 1.0,
+          "max_iter": 1000,
+          "solver": "lbfgs"
+        }
+      },
+      "feature_params": {
+        "tfidf_max_features": 8000,
+        "ngram_range": [
+          1,
+          4
+        ],
+        "min_df": 2,
+        "max_df": 0.95,
+        "use_tfidf": true,
+        "lowercase": true,
+        "stop_words": "english",
+        "text_columns": [
+          "title",
+          "abstract",
+          "keywords"
+        ],
+        "categorical_columns": [
+          "journal_category",
+          "year_category",
+          "author_count_category"
+        ],
+        "numerical_columns": [
+          "year",
+          "title_length",
+          "abstract_length",
+          "author_count",
+          "num_keywords"
+        ]
+      },
+      "model_path": "experiments/LR_extended_ngrams/model.pkl",
+      "metrics_path": "experiments/LR_extended_ngrams/metrics.json"
+    }
+  ]
+}

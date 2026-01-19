@@ -33,7 +33,47 @@ stages:
     - data/processed/processing_metadata.yaml
     desc: Clean and preprocess raw ArXiv data for ML training
 
-  # Stage 3: Train the machine learning model
+  # Stage 3: Train a single baseline model
+  train:
+    cmd: python scripts/train_model.py 
+      --input data/processed/publications_processed.csv 
+      --model-output models/baseline_model.pkl 
+      --metrics models/baseline_metrics.json 
+      --params params.yaml
+    deps:
+    - scripts/train_model.py
+    - data/processed/publications_processed.csv
+    params:
+    - train
+    - feature_engineering
+    - mlflow
+    outs:
+    - models/baseline_model.pkl
+    - models/baseline_model_metadata.yaml
+    metrics:
+    - models/baseline_metrics.json:
+        cache: false
+    desc: Train baseline classification model with MLflow tracking
+
+  # Stage 4: Run multiple experiments with different algorithms and parameters
+  run_experiments:
+    cmd: python scripts/run_experiments.py
+    deps:
+    - scripts/run_experiments.py
+    - scripts/train_model.py
+    - data/processed/publications_processed.csv
+    params:
+    - train
+    - feature_engineering
+    - mlflow
+    outs:
+    - experiments:
+        cache: false
+    metrics:
+    - experiments_summary.json:
+        cache: false
+    desc: Run 15+ ML experiments with different algorithms and hyperparameters
+
 plots:
 - reports/confusion_matrix.png:
     title: Model Confusion Matrix

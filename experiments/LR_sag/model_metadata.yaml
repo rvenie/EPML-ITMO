@@ -1,4 +1,4 @@
-algorithm: SVM
+algorithm: LogisticRegression
 data_info:
   features: 2150
   target_classes: 44
@@ -27,10 +27,10 @@ feature_engineering:
   - title
   - abstract
   - keywords
-  tfidf_max_features: 3000
+  tfidf_max_features: 5000
   use_tfidf: true
 hyperparameters:
-  algorithm: SVM
+  algorithm: LogisticRegression
   cross_validation:
     folds: 5
     scoring: accuracy
@@ -39,7 +39,7 @@ hyperparameters:
     C: 1.0
     max_iter: 1000
     penalty: l2
-    solver: lbfgs
+    solver: sag
   random_forest:
     bootstrap: true
     max_depth: 10
@@ -50,16 +50,16 @@ hyperparameters:
     oob_score: true
   random_state: 42
   svm:
-    C: 0.1
+    C: 1.0
     gamma: scale
     kernel: rbf
     probability: true
   test_size: 0.2
-mlflow_run_id: ac533af2c8ab4b7b8daca4a2a35f7f07
+mlflow_run_id: fbab0eb4e4c642e38c1ca941d65fb318
 model_name: arxiv_publications_classification_model
 model_version: 1.0.0
 performance:
-  cv_accuracy: 0.2
-  test_accuracy: 0.25
-  test_f1_score: 0.1
-training_date: '2026-01-19T21:19:18.614658'
+  cv_accuracy: 0.125
+  test_accuracy: 0.2
+  test_f1_score: 0.10526315789473684
+training_date: '2026-01-19T21:20:37.314562'

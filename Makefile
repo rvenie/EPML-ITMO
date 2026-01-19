@@ -95,25 +95,70 @@ shell:
 data: install
 	poetry run python researchhub/dataset.py
 
-## Train model
+## Train baseline model
 .PHONY: train
 train: install
 	poetry run dvc repro train
 
-## Run full DVC pipeline
+## Run all experiments with different algorithms
+.PHONY: experiments
+experiments: install
+	poetry run dvc repro run_experiments
+
+## Run full DVC pipeline (fetch, preprocess, train, experiments)
 .PHONY: pipeline
 pipeline: install
 	poetry run dvc repro
 
+## Run full pipeline with experiments
+.PHONY: pipeline-full
+pipeline-full: install
+	poetry run dvc repro run_experiments
+
 ## Start MLflow UI
 .PHONY: mlflow-ui
 mlflow-ui:
-	poetry run mlflow ui
+	poetry run mlflow ui --backend-store-uri file:./mlruns --host 127.0.0.1 --port 3000
+
+## Start MLflow server in background
+.PHONY: mlflow-server
+mlflow-server:
+	poetry run mlflow server --backend-store-uri file:./mlruns --host 127.0.0.1 --port 3000 &
 
 ## Run Jupyter notebook
 .PHONY: notebook
 notebook: install
 	poetry run jupyter notebook
+
+## Fetch and preprocess data only
+.PHONY: data-pipeline
+data-pipeline: install
+	poetry run dvc repro preprocess
+
+## View experiment results summary
+.PHONY: results
+results:
+	@if [ -f experiments_summary.json ]; then \
+		cat experiments_summary.json | python -m json.tool | head -50; \
+	else \
+		echo "No experiments summary found. Run 'make experiments' first."; \
+	fi
+
+## Clean all experiment artifacts
+.PHONY: clean-experiments
+clean-experiments:
+	rm -rf experiments/
+	rm -rf mlruns/
+	rm -f experiments_summary.json
+	@echo "Cleaned all experiment artifacts"
+
+## Show MLflow tracking URI
+.PHONY: mlflow-info
+mlflow-info:
+	@echo "MLflow Tracking URI: file:./mlruns"
+	@echo "MLflow UI URL: http://127.0.0.1:3000"
+	@echo ""
+	@echo "To start MLflow UI, run: make mlflow-ui"
 
 #################################################################################
 # Self Documenting Commands                                                     #

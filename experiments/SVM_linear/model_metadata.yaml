@@ -1,6 +1,6 @@
 algorithm: SVM
 data_info:
-  features: 2080
+  features: 2150
   target_classes: 44
   test_samples: 20
   training_samples: 80
@@ -39,7 +39,7 @@ hyperparameters:
     C: 1.0
     max_iter: 1000
     penalty: l2
-    solver: liblinear
+    solver: lbfgs
   random_forest:
     bootstrap: true
     max_depth: 10
@@ -55,11 +55,11 @@ hyperparameters:
     kernel: linear
     probability: true
   test_size: 0.2
-mlflow_run_id: 5539c61dcc6547d3845ce260d4685abc
+mlflow_run_id: 1f9df1c34ad941df816a740ed05ccd7c
 model_name: arxiv_publications_classification_model
 model_version: 1.0.0
 performance:
-  cv_accuracy: 0.35
-  test_accuracy: 0.2
-  test_f1_score: 0.22222222222222224
-training_date: '2025-12-21T23:48:02.105304'
+  cv_accuracy: 0.2
+  test_accuracy: 0.3
+  test_f1_score: 0.2690476190476191
+training_date: '2026-01-19T21:19:15.253052'

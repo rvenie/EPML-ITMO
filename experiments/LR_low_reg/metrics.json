@@ -1,27 +1,27 @@
 {
   "cross_validation": {
-    "mean_score": 0.3875,
-    "std_score": 0.07288689868556625,
+    "mean_score": 0.125,
+    "std_score": 0.05590169943749474,
     "scores": [
-      0.3125,
-      0.4375,
-      0.5,
-      0.375,
-      0.3125
+      0.0625,
+      0.0625,
+      0.1875,
+      0.125,
+      0.1875
     ]
   },
   "test_metrics": {
     "accuracy": 0.2,
-    "precision": 0.25,
+    "precision": 0.13214285714285715,
     "recall": 0.2,
-    "f1_score": 0.22222222222222224
+    "f1_score": 0.15833333333333333
   },
   "model_info": {
     "algorithm": "LogisticRegression",
     "training_samples": 80,
     "test_samples": 20,
-    "features": 2080,
+    "features": 2150,
     "classes": 44
   },
-  "training_date": "2025-12-21T23:48:14.178386"
+  "training_date": "2026-01-19T21:20:19.057291"
 }

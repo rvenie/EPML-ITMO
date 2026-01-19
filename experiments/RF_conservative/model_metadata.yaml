@@ -1,6 +1,6 @@
 algorithm: RandomForestClassifier
 data_info:
-  features: 2080
+  features: 2150
   target_classes: 44
   test_samples: 20
   training_samples: 80
@@ -39,7 +39,7 @@ hyperparameters:
     C: 1.0
     max_iter: 1000
     penalty: l2
-    solver: liblinear
+    solver: lbfgs
   random_forest:
     bootstrap: true
     max_depth: 7
@@ -55,11 +55,11 @@ hyperparameters:
     kernel: rbf
     probability: true
   test_size: 0.2
-mlflow_run_id: 574827aa768b4f1797571e62b841137d
+mlflow_run_id: cdc63e9dd3f44eb09dcce9c4b66fd0f9
 model_name: arxiv_publications_classification_model
 model_version: 1.0.0
 performance:
-  cv_accuracy: 0.375
-  test_accuracy: 0.25
-  test_f1_score: 0.10416666666666667
-training_date: '2025-12-21T23:47:43.409271'
+  cv_accuracy: 0.4
+  test_accuracy: 0.4
+  test_f1_score: 0.25357142857142856
+training_date: '2026-01-19T21:18:59.384422'

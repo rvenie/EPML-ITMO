@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from train_model import train_model
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def load_base_params(params_file: str = "params.yaml") -> dict[str, Any]:
     """Загружает базовые параметры из файла."""
     with open(params_file) as f:
-        return yaml.safe_load(f)
+        return yaml.safe_load(f)  # type: ignore[no-any-return]
 
 
 def create_experiment_configs() -> list[dict[str, Any]]:
@@ -122,35 +122,55 @@ def create_experiment_configs() -> list[dict[str, Any]]:
         {
             "name": "LR_baseline",
             "algorithm": "LogisticRegression",
-            "params": {"penalty": "l2", "C": 1.0, "solver": "liblinear"},
+            "params": {
+                "penalty": "l2",
+                "C": 1.0,
+                "solver": "lbfgs",
+            },  # lbfgs поддерживает multiclass
             "feature_params": {"tfidf_max_features": 5000, "ngram_range": [1, 2]},
         },
         # L1 регуляризация
         {
             "name": "LR_l1_penalty",
             "algorithm": "LogisticRegression",
-            "params": {"penalty": "l1", "C": 1.0, "solver": "liblinear"},
+            "params": {
+                "penalty": "l1",
+                "C": 1.0,
+                "solver": "saga",
+            },  # saga поддерживает L1 и multiclass
             "feature_params": {"tfidf_max_features": 5000, "ngram_range": [1, 2]},
         },
         # Высокая регуляризация
         {
             "name": "LR_high_reg",
             "algorithm": "LogisticRegression",
-            "params": {"penalty": "l2", "C": 0.1, "solver": "liblinear"},
+            "params": {
+                "penalty": "l2",
+                "C": 0.1,
+                "solver": "lbfgs",
+            },  # lbfgs поддерживает multiclass
             "feature_params": {"tfidf_max_features": 3000, "ngram_range": [1, 2]},
         },
         # Низкая регуляризация
         {
             "name": "LR_low_reg",
             "algorithm": "LogisticRegression",
-            "params": {"penalty": "l2", "C": 10.0, "solver": "liblinear"},
+            "params": {
+                "penalty": "l2",
+                "C": 10.0,
+                "solver": "lbfgs",
+            },  # lbfgs поддерживает multiclass
             "feature_params": {"tfidf_max_features": 7000, "ngram_range": [1, 2]},
         },
-        # Другой солвер
+        # SAG солвер (быстрее на больших данных)
         {
-            "name": "LR_lbfgs",
+            "name": "LR_sag",
             "algorithm": "LogisticRegression",
-            "params": {"penalty": "l2", "C": 1.0, "solver": "lbfgs"},
+            "params": {
+                "penalty": "l2",
+                "C": 1.0,
+                "solver": "sag",
+            },  # sag поддерживает multiclass
             "feature_params": {"tfidf_max_features": 5000, "ngram_range": [1, 2]},
         },
     ]
@@ -168,7 +188,11 @@ def create_experiment_configs() -> list[dict[str, Any]]:
         {
             "name": "LR_extended_ngrams",
             "algorithm": "LogisticRegression",
-            "params": {"penalty": "l2", "C": 1.0, "solver": "liblinear"},
+            "params": {
+                "penalty": "l2",
+                "C": 1.0,
+                "solver": "lbfgs",
+            },  # lbfgs поддерживает multiclass
             "feature_params": {"tfidf_max_features": 8000, "ngram_range": [1, 4]},
         },
     ]
@@ -301,7 +325,7 @@ def analyze_results(results: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
     # Статистика по алгоритмам
-    algorithm_stats = {}
+    algorithm_stats: dict[str, Any] = {}
     for result in successful_results:
         alg = result["algorithm"]
         if alg not in algorithm_stats:
@@ -311,11 +335,13 @@ def analyze_results(results: list[dict[str, Any]]) -> dict[str, Any]:
         algorithm_stats[alg]["f1_scores"].append(result["test_f1_score"])
 
     # Средние метрики по алгоритмам
-    for alg, stats in algorithm_stats.items():
-        stats["mean_accuracy"] = sum(stats["accuracies"]) / len(stats["accuracies"])
-        stats["mean_f1_score"] = sum(stats["f1_scores"]) / len(stats["f1_scores"])
-        stats["best_accuracy"] = max(stats["accuracies"])
-        stats["best_f1_score"] = max(stats["f1_scores"])
+    for _, stats in algorithm_stats.items():
+        accuracies: list[float] = stats["accuracies"]
+        f1_scores: list[float] = stats["f1_scores"]
+        stats["mean_accuracy"] = sum(accuracies) / len(accuracies)
+        stats["mean_f1_score"] = sum(f1_scores) / len(f1_scores)
+        stats["best_accuracy"] = max(accuracies)
+        stats["best_f1_score"] = max(f1_scores)
 
     analysis = {
         "total_experiments": len(results),
